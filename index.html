@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AEGIS-AGENT | Multi-Agent Security War Room</title>
+  <link rel="stylesheet" href="./css/war-room.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2306b6d4'><path d='M12 2L3 7v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-9-5z'/></svg>">
+</head>
+<body>
+
+  <!-- Persistent Mandatory Front-End Demo Banner -->
+  <div class="demo-banner" role="banner" aria-label="Demo environment disclaimer">
+    <div class="banner-text">
+      <span class="badge-pill">Prototype Simulation</span>
+      <span>Front-end demo &mdash; no real scans or code changes</span>
+    </div>
+    <div class="banner-text">
+      <span class="banner-notice-badge">Authorized Local Testing Only</span>
+    </div>
+  </div>
+
+  <!-- Main War Room Header / Navigation -->
+  <header class="top-navbar" role="navigation" aria-label="Main navigation">
+    <div class="nav-left">
+      <div class="brand-wrapper">
+        <div class="brand-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M9 12l2 2 4-4"/>
+          </svg>
+        </div>
+        <div class="brand-title-area">
+          <div class="brand-title">
+            AEGIS-AGENT
+            <span class="version-badge">v0.9.4 Prototype</span>
+          </div>
+          <div class="brand-subtitle">Multi-Agent Security War Room &bull; Local Target Testing</div>
+        </div>
+      </div>
+
+      <nav class="nav-tabs" aria-label="Navigation Tabs">
+        <button id="nav-warroom" class="nav-tab-btn active" data-nav="war-room" aria-label="War Room View">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
+          War Room (Live)
+        </button>
+        <button id="nav-dashboard" class="nav-tab-btn" data-nav="dashboard" aria-label="Dashboard Overview">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          Dashboard &amp; History
+        </button>
+        <button id="nav-logs" class="nav-tab-btn" data-nav="logs" aria-label="Agent Telemetry Logs">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          Agent Telemetry
+        </button>
+        <button id="nav-about" class="nav-tab-btn" data-nav="about" aria-label="System Architecture">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          Architecture
+        </button>
+      </nav>
+    </div>
+
+    <div class="nav-right">
+      <div class="sys-telemetry" title="Heartbeat telemetry from authorized local mock sandbox">
+        <div class="pulse-dot" aria-hidden="true"></div>
+        <span id="sys-clock">12:00:00 UTC</span>
+        <span style="color:var(--text-secondary);">&bull; Sandbox Ready</span>
+      </div>
+      <button id="btn-new-run-header" class="btn-primary" aria-label="Start New Demo Run">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Start Demo Run
+      </button>
+    </div>
+  </header>
+
+  <!-- Live Simulation Status & War Room Control Bar -->
+  <section class="sim-control-bar" aria-label="Simulation Controls">
+    <div class="sim-status-group">
+      <div class="sim-run-tag" id="sim-run-tag">RUN-1049</div>
+      <div class="sim-state-badge running" id="sim-state-badge">
+        <span>●</span> SIMULATING
+      </div>
+      <div style="font-size:12px; color:var(--text-muted); display:flex; align-items:center; gap:6px;">
+        <span>Target:</span>
+        <strong style="color:var(--text-secondary);" id="active-target-label">Local training app</strong>
+      </div>
+    </div>
+
+    <div class="sim-controls-actions">
+      <button id="btn-pause-resume" class="btn-ctrl" title="Keyboard Shortcut: Space">
+        <span>⏸</span> Pause Demo
+      </button>
+      <button id="btn-step-demo" class="btn-ctrl" title="Advance one stage">
+        <span>⏭</span> Step Forward
+      </button>
+      <button id="btn-reset-demo" class="btn-ctrl" title="Keyboard Shortcut: R">
+        <span>↺</span> Reset Demo
+      </button>
+
+      <div style="display:flex; align-items:center; gap:6px; margin-left:8px;">
+        <span style="font-size:11px; color:var(--text-muted);">Speed:</span>
+        <div class="speed-selector">
+          <button class="speed-btn" data-speed="0.5">0.5x</button>
+          <button class="speed-btn active" data-speed="1">1x</button>
+          <button class="speed-btn" data-speed="2">2x</button>
+          <button class="speed-btn" data-speed="8">Fast</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Dynamic Application Content Container -->
+  <main class="main-container">
+
+    <!-- VIEW 1: WAR ROOM / LIVE RUN DETAILS -->
+    <div id="view-warroom" class="view-section active" role="region" aria-label="War Room Live View">
+      
+      <!-- Authorized Scope Notice -->
+      <div class="notice-box">
+        <div class="notice-box-text">
+          <strong>Authorized Environment Scope:</strong> All red-team probes and automated remediations are executed exclusively within the local training container. External network connections and production modifications are strictly prohibited.
+        </div>
+        <div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">
+          Scope ID: SEC-LOCAL-8080
+        </div>
+      </div>
+
+      <div class="warroom-grid">
+        
+        <!-- Left Column: 5 Workflow Stages & Multi-Agent Matrix -->
+        <aside class="timeline-column" aria-label="Workflow Timeline and Agent Status">
+          <div class="timeline-card">
+            <div class="timeline-title">
+              <span>Workflow Stages (5)</span>
+              <span style="font-size:10px; color:var(--accent-cyan); font-family:var(--font-mono);">SYNCHRONOUS</span>
+            </div>
+
+            <!-- Dynamic 5-Stage Live Timeline -->
+            <div class="stages-list" id="timeline-stages-list">
+              <!-- Rendered via JavaScript -->
+            </div>
+          </div>
+
+          <!-- Multi-Agent Operations Roster -->
+          <div class="agents-status-card">
+            <div style="font-size:12px; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:12px;">
+              Active Agent Roles (4)
+            </div>
+
+            <!-- 1. Red Agent -->
+            <div class="agent-row">
+              <div class="agent-info-box">
+                <div class="agent-avatar red">R</div>
+                <div class="agent-text">
+                  <div class="name">Red Agent</div>
+                  <div class="role-desc">Executes predefined security probes</div>
+                </div>
+              </div>
+              <span id="agent-pill-red" class="agent-activity-pill idle">Idle</span>
+            </div>
+
+            <!-- 2. Sentinel Agent -->
+            <div class="agent-row">
+              <div class="agent-info-box">
+                <div class="agent-avatar sentinel">S</div>
+                <div class="agent-text">
+                  <div class="name">Sentinel Agent</div>
+                  <div class="role-desc">Validates results and evidence</div>
+                </div>
+              </div>
+              <span id="agent-pill-sentinel" class="agent-activity-pill idle">Idle</span>
+            </div>
+
+            <!-- 3. Fix Agent -->
+            <div class="agent-row">
+              <div class="agent-info-box">
+                <div class="agent-avatar fix">F</div>
+                <div class="agent-text">
+                  <div class="name">Fix Agent</div>
+                  <div class="role-desc">Proposes code remediation diff</div>
+                </div>
+              </div>
+              <span id="agent-pill-fix" class="agent-activity-pill idle">Idle</span>
+            </div>
+
+            <!-- 4. Auditor Agent -->
+            <div class="agent-row">
+              <div class="agent-info-box">
+                <div class="agent-avatar auditor">A</div>
+                <div class="agent-text">
+                  <div class="name">Auditor Agent</div>
+                  <div class="role-desc">Verifies regression checks</div>
+                </div>
+              </div>
+              <span id="agent-pill-auditor" class="agent-activity-pill idle">Idle</span>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Right Column: Evidence, Fix & Regression Detail Panes -->
+        <section class="warroom-detail-panel" aria-label="Investigation and Remediation Workbench">
+          
+          <!-- War Room Tabs -->
+          <div class="detail-nav-tabs" role="tablist">
+            <button class="detail-tab-btn active" data-tab="finding" role="tab" aria-selected="true" title="Shortcut: 1">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              Finding &amp; Evidence
+            </button>
+            <button class="detail-tab-btn" data-tab="fix" role="tab" aria-selected="false" title="Shortcut: 2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              Proposed Fix (Diff)
+            </button>
+            <button class="detail-tab-btn" data-tab="regression" role="tab" aria-selected="false" title="Shortcut: 3">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              Regression Results
+            </button>
+            <button class="detail-tab-btn" data-tab="rawlogs" role="tab" aria-selected="false" title="Shortcut: 4">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+              Live Telemetry
+            </button>
+          </div>
+
+          <!-- PANE 1: FINDING AND EVIDENCE VIEW -->
+          <div id="pane-finding" class="detail-pane active" role="tabpanel">
+            <div class="sim-watermark-banner">
+              <span>SIMULATED DEMO DATA &bull; AUTHORIZED LOCAL TARGET</span>
+              <span class="sim-watermark-tag">Sentinel Verification Complete</span>
+            </div>
+
+            <div class="finding-header">
+              <div class="finding-title-row">
+                <h2 class="finding-title" id="finding-title">CWE-89: Unsanitized SQL Query Interpolation in Auth Search</h2>
+                <span class="severity-pill high" id="finding-severity">HIGH SEVERITY</span>
+              </div>
+
+              <div class="finding-meta-grid">
+                <div>
+                  <div class="meta-field-label">Affected Component</div>
+                  <div class="meta-field-val" id="finding-component">POST /api/v1/auth/login</div>
+                </div>
+                <div>
+                  <div class="meta-field-label">CVSS Base Score</div>
+                  <div class="meta-field-val" id="finding-cvss">8.4 (High)</div>
+                </div>
+                <div>
+                  <div class="meta-field-label">Vulnerability Category</div>
+                  <div class="meta-field-val" id="finding-category">Injection (OWASP A03:2021)</div>
+                </div>
+                <div>
+                  <div class="meta-field-label">CWE Mapping</div>
+                  <div class="meta-field-val" id="finding-cwe">CWE-89</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Short Explanation -->
+            <div class="finding-section">
+              <div class="section-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                Vulnerability Assessment Summary
+              </div>
+              <div class="explanation-card" id="finding-explanation">
+                The application concatenates user-supplied input directly into an SQL command without adequate parameterization. An unauthorized client can manipulate database query logic to bypass authentication controls.
+              </div>
+            </div>
+
+            <!-- Evidence Inspector Tabs -->
+            <div class="finding-section">
+              <div class="section-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                Captured Evidence Telemetry
+              </div>
+              
+              <div class="evidence-subnav">
+                <button class="evidence-tab-btn active" data-evidence="request">HTTP Probe Request</button>
+                <button class="evidence-tab-btn" data-evidence="response">HTTP Response &amp; Body</button>
+                <button class="evidence-tab-btn" data-evidence="logs">Agent Telemetry Trace</button>
+                <button class="evidence-tab-btn" data-evidence="stack">Container Stacktrace</button>
+              </div>
+
+              <pre class="code-viewer" id="evidence-code-viewer">Loading evidence...</pre>
+            </div>
+
+            <!-- Interactive Review Controls (Prototype Only) -->
+            <div class="review-controls-card">
+              <div class="review-controls-header">
+                <div>
+                  <div class="review-controls-title">Triage Review State</div>
+                  <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">
+                    Prototype UI controls &mdash; updates local front-end review state only
+                  </div>
+                </div>
+                <div class="review-state-display" id="review-state-display">NEEDS REVIEW</div>
+              </div>
+
+              <div class="review-buttons-group">
+                <button class="btn-review confirm" id="btn-review-confirm">
+                  <span>✓</span> Confirmed Finding
+                </button>
+                <button class="btn-review needs-review" id="btn-review-needsreview">
+                  <span>?</span> Needs Review
+                </button>
+                <button class="btn-review not-confirmed" id="btn-review-notconfirmed">
+                  <span>✕</span> Not Confirmed
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- PANE 2: PROPOSED FIX VIEW -->
+          <div id="pane-fix" class="detail-pane" role="tabpanel">
+            <div class="sim-watermark-banner">
+              <span>FIX AGENT SYNTHESIS &bull; AUTOMATED REMEDIATION PROPOSAL</span>
+              <span class="sim-watermark-tag" id="fix-status-badge">Status: Pending</span>
+            </div>
+
+            <div class="fix-summary-box">
+              <h3>Remediation Strategy</h3>
+              <p id="fix-summary-text">
+                Replace raw string interpolation with parameterized SQL query execution using prepared statements. User inputs are bound strictly as parameters rather than executable SQL clauses.
+              </p>
+            </div>
+
+            <!-- Code Diff Viewer -->
+            <div class="diff-container">
+              <div class="diff-toolbar">
+                <div class="diff-file-path" id="diff-file-path">backend/services/auth_service.py</div>
+                <div class="diff-stats">
+                  <span class="add" id="diff-stats-add">+6</span>
+                  <span class="del" id="diff-stats-del">-4</span>
+                </div>
+              </div>
+
+              <div class="diff-code-body" id="diff-code-body">
+                <!-- Lines populated dynamically -->
+              </div>
+            </div>
+
+            <!-- Action Controls -->
+            <div class="fix-actions-card">
+              <div class="fix-actions-buttons">
+                <button class="btn-approve" id="btn-approve-fix">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  Approve for Demo
+                </button>
+                <button class="btn-reject" id="btn-reject-fix">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                  Reject Fix
+                </button>
+              </div>
+
+              <div class="fix-disclaimer">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12.01" y2="8"/><line x1="12" y1="12" x2="12" y2="16"/></svg>
+                <span>Notice: This action only updates the front-end demonstration state. No code was actually changed and no pull request was created.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- PANE 3: REGRESSION RESULT VIEW -->
+          <div id="pane-regression" class="detail-pane" role="tabpanel">
+            <div class="sim-watermark-banner">
+              <span>AUDITOR AGENT VERIFICATION &bull; REGRESSION TEST SUITE</span>
+              <span class="sim-watermark-tag">Simulated Test Execution</span>
+            </div>
+
+            <!-- Primary Reproducibility Status Banner -->
+            <div class="reproducibility-banner remediated" id="reproducibility-banner">
+              <div>
+                <div class="repro-status-badge" id="repro-status-badge">
+                  <span>🛡️</span> REMEDIATED &mdash; Not Reproducible
+                </div>
+                <div style="font-size:12px; color:var(--text-secondary); margin-top:4px;" id="repro-status-text">
+                  All 4 verification checks passed. Original vulnerability is remediated and no longer reproducible.
+                </div>
+              </div>
+
+              <button class="btn-secondary" id="btn-toggle-reproducibility" style="padding:6px 12px; font-size:11px;">
+                ↺ Toggle / Re-test
+              </button>
+            </div>
+
+            <!-- Checks List -->
+            <div class="checks-grid" id="regression-checks-list">
+              <!-- Populated via JavaScript -->
+            </div>
+
+            <div class="notice-box" style="margin-bottom:0;">
+              <div class="notice-box-text" style="font-size:11px; color:var(--text-muted);">
+                <strong>Distinction Notice:</strong> All regression checks displayed above are simulated synthetic results generated for local demonstration. They are clearly distinguished from actual production CI/CD test runners.
+              </div>
+            </div>
+          </div>
+
+          <!-- PANE 4: LIVE TELEMETRY LOGS -->
+          <div id="pane-rawlogs" class="detail-pane" role="tabpanel">
+            <div class="sim-watermark-banner">
+              <span>AEGIS MESSAGE BUS &bull; INTER-AGENT TELEMETRY FEED</span>
+              <span class="sim-watermark-tag">Realtime Stream</span>
+            </div>
+            <pre class="code-viewer" id="warroom-logs-viewer" style="height:380px;">Streaming telemetry...</pre>
+          </div>
+
+        </section>
+      </div>
+    </div>
+
+    <!-- VIEW 2: DASHBOARD & RECENT RUNS -->
+    <div id="view-dashboard" class="view-section" role="region" aria-label="Dashboard Overview">
+      
+      <!-- Hero Banner -->
+      <section class="dashboard-hero">
+        <div class="hero-left">
+          <h1>
+            <span>AEGIS-AGENT Operations Center</span>
+          </h1>
+          <p>
+            Autonomous multi-agent security test workflow designed for authorized local applications. Orchestrates automated test probes, evidence verification, remediation synthesis, and regression auditing without manual intervention.
+          </p>
+
+          <div class="hero-roles-bar">
+            <div class="role-chip red"><strong>1. Red Agent:</strong> Runs security test</div>
+            <div class="role-chip sentinel"><strong>2. Sentinel Agent:</strong> Reviews evidence</div>
+            <div class="role-chip fix"><strong>3. Fix Agent:</strong> Proposes fix</div>
+            <div class="role-chip auditor"><strong>4. Auditor Agent:</strong> Displays regression</div>
+          </div>
+        </div>
+
+        <button id="btn-start-demo-hero" class="btn-primary" style="padding:12px 24px; font-size:14px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Start Demo Run
+        </button>
+      </section>
+
+      <!-- Metric Stat Cards -->
+      <div class="metrics-row">
+        <div class="metric-card">
+          <div class="metric-header">
+            <span>Total Local Scans</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div class="metric-value">1,049</div>
+          <div class="metric-footer">+4 simulated runs today</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span>Active Roles</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+          </div>
+          <div class="metric-value">4 Agents</div>
+          <div class="metric-footer">Red, Sentinel, Fix, Auditor</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span>Target Vulnerabilities</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          </div>
+          <div class="metric-value" style="color:#f87171;">1 High</div>
+          <div class="metric-footer">Mock CWE-89 injection</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span>Regression Pass Rate</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div class="metric-value" style="color:#34d399;">100%</div>
+          <div class="metric-footer">Synthetic check verification</div>
+        </div>
+      </div>
+
+      <!-- Scope Notice Banner -->
+      <div class="notice-box">
+        <div class="notice-box-text">
+          <strong>Authorized Local Testing Notice:</strong> This prototype is strictly confined to authorized local training environments. Arbitrary public URLs and production modifications are intentionally disabled.
+        </div>
+      </div>
+
+      <!-- Recent Runs List Table -->
+      <div class="table-card">
+        <div class="table-header">
+          <div class="table-title">Recent Simulation Runs</div>
+          <div style="font-size:12px; color:var(--text-muted);">Showing recent local test activities</div>
+        </div>
+
+        <table class="runs-table" aria-label="Recent simulation runs table">
+          <thead>
+            <tr>
+              <th>Run ID</th>
+              <th>Target Label</th>
+              <th>Test Case</th>
+              <th>Finding Count</th>
+              <th>Status</th>
+              <th>Timestamp</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="runs-table-body">
+            <!-- Populated via JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- VIEW 3: AGENT TELEMETRY LOGS -->
+    <div id="view-logs" class="view-section" role="region" aria-label="System Telemetry Feed">
+      <div class="table-card" style="padding:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <div>
+            <h2 style="font-size:16px; font-weight:800; color:#fff;">System Log &amp; Event Stream</h2>
+            <p style="font-size:12px; color:var(--text-muted);">Real-time synchronous log trace across Red, Sentinel, Fix, and Auditor agents</p>
+          </div>
+          <span class="sim-watermark-tag">Telemetry Channel: #aegis-core</span>
+        </div>
+        <pre class="code-viewer" id="full-logs-viewer" style="height:480px;">Initializing log streams...</pre>
+      </div>
+    </div>
+
+    <!-- VIEW 4: ARCHITECTURE & ABOUT -->
+    <div id="view-about" class="view-section" role="region" aria-label="System Architecture Information">
+      <div class="table-card" style="padding:28px; max-width:900px; margin:0 auto;">
+        <h2 style="font-size:20px; font-weight:800; color:#fff; margin-bottom:12px;">AEGIS-AGENT Multi-Agent Security Architecture</h2>
+        <p style="color:var(--text-secondary); line-height:1.7; margin-bottom:20px;">
+          AEGIS-AGENT is an autonomous cybersecurity workflow prototype. It demonstrates how multi-agent collaboration decomposes the security review lifecycle into specialized, auditable roles:
+        </p>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:24px;">
+          <div style="background:var(--bg-secondary); padding:16px; border-radius:var(--radius-md); border:1px solid var(--border-subtle);">
+            <div style="color:#f87171; font-weight:700; margin-bottom:4px;">1. Red Agent</div>
+            <p style="font-size:12px; color:var(--text-secondary);">Executes selected predefined security probes against authorized local targets with safe, bound payloads.</p>
+          </div>
+          <div style="background:var(--bg-secondary); padding:16px; border-radius:var(--radius-md); border:1px solid var(--border-subtle);">
+            <div style="color:#fbbf24; font-weight:700; margin-bottom:4px;">2. Sentinel Agent</div>
+            <p style="font-size:12px; color:var(--text-secondary);">Inspects captured responses, query traces, and error reflection to validate finding evidence and eliminate noise.</p>
+          </div>
+          <div style="background:var(--bg-secondary); padding:16px; border-radius:var(--radius-md); border:1px solid var(--border-subtle);">
+            <div style="color:#60a5fa; font-weight:700; margin-bottom:4px;">3. Fix Agent</div>
+            <p style="font-size:12px; color:var(--text-secondary);">Synthesizes defensive code diffs (parameterization, signature checks, path canonicalization) without affecting API contracts.</p>
+          </div>
+          <div style="background:var(--bg-secondary); padding:16px; border-radius:var(--radius-md); border:1px solid var(--border-subtle);">
+            <div style="color:#34d399; font-weight:700; margin-bottom:4px;">4. Auditor Agent</div>
+            <p style="font-size:12px; color:var(--text-secondary);">Executes regression test suites to guarantee the vulnerability is not reproducible and user flows remain unhindered.</p>
+          </div>
+        </div>
+
+        <div class="notice-box" style="margin-bottom:0;">
+          <div class="notice-box-text">
+            <strong>Prototype Implementation:</strong> Pure front-end demonstration interface. No backend connections, live vulnerability scanners, or automated code writes are performed.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL: NEW RUN SETUP -->
+  <div id="modal-new-run" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 id="modal-title">Configure New Demo Run</h2>
+        <button id="btn-modal-close" class="modal-close-btn" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        
+        <!-- Target Field (Prefilled and locked) -->
+        <div class="form-group">
+          <label class="form-label" for="target-field">Target Environment</label>
+          <div class="form-control-disabled" id="target-field">
+            <span>Local training app (auth-service:v1.4.2)</span>
+            <span style="font-size:10px; color:var(--accent-cyan); font-weight:600;">LOCKED</span>
+          </div>
+          <div class="form-hint">
+            Arbitrary public URLs are disabled in this prototype. Scans are strictly bounded to the authorized local mock container.
+          </div>
+        </div>
+
+        <!-- Test Case Selector -->
+        <div class="form-group">
+          <label class="form-label">Select Security Test Case</label>
+          <div class="testcase-options-list">
+            
+            <label class="testcase-option-card selected">
+              <input type="radio" name="testcase" value="input-validation" class="testcase-radio" checked>
+              <div class="testcase-info">
+                <h4>Input validation check (CWE-89)</h4>
+                <p>SQL parameter boundary check on authentication login &bull; Injects syntax breaker payload</p>
+              </div>
+            </label>
+
+            <label class="testcase-option-card">
+              <input type="radio" name="testcase" value="authentication-check" class="testcase-radio">
+              <div class="testcase-info">
+                <h4>Authentication check (CWE-287)</h4>
+                <p>Audits JWT signature handling &bull; Tests forged token with algorithm "none"</p>
+              </div>
+            </label>
+
+            <label class="testcase-option-card">
+              <input type="radio" name="testcase" value="path-traversal" class="testcase-radio">
+              <div class="testcase-info">
+                <h4>Path traversal check (CWE-22)</h4>
+                <p>Evaluates local report file downloads against relative directory escape sequences</p>
+              </div>
+            </label>
+
+          </div>
+        </div>
+
+        <!-- Scope Confirmation Checkbox -->
+        <div class="form-group" style="margin-bottom:0;">
+          <div class="scope-checkbox-box">
+            <input type="checkbox" id="chk-scope-confirm">
+            <label for="chk-scope-confirm" class="scope-checkbox-label">
+              <strong>I confirm scope authorization:</strong> This simulation is restricted strictly to the authorized local training environment. No production assets or public hosts will be targeted.
+            </label>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button id="btn-modal-cancel" class="btn-secondary">Cancel</button>
+        <button id="btn-modal-start" class="btn-primary" disabled style="opacity:0.5;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Start Run
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Feedback Notifications Container -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div>
+      <strong>AEGIS-AGENT</strong> &bull; Multi-Agent Security War Room Prototype
+    </div>
+    <div>
+      Front-end demo &mdash; no real scans or code changes
+    </div>
+  </footer>
+
+  <!-- Application Scripts (Self-contained, zero-dependency) -->
+  <script src="./js/mockData.js"></script>
+  <script src="./js/simulator.js"></script>
+  <script src="./js/app.js"></script>
+</body>
+</html>
+
