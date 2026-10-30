@@ -381,7 +381,7 @@
           <div id="pane-fix" class="detail-pane" role="tabpanel">
             <div class="sim-watermark-banner">
               <span>FIX AGENT SYNTHESIS &bull; AUTOMATED REMEDIATION PROPOSAL</span>
-              <span class="sim-watermark-tag" id="fix-status-badge">Status: Pending</span>
+              <span class="sim-watermark-tag" id="fix-status-badge">Status: Pending Approval</span>
             </div>
 
             <div class="fix-summary-box">
@@ -389,6 +389,23 @@
               <p id="fix-summary-text">
                 Replace raw string interpolation with parameterized SQL query execution using prepared statements. User inputs are bound strictly as parameters rather than executable SQL clauses.
               </p>
+            </div>
+
+            <!-- Fix Meta: Technical Rationale & Allowlisted Test Status -->
+            <div class="fix-meta-cards" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:12px; margin-bottom:16px;">
+              <div style="background:var(--bg-secondary); padding:12px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-subtle);">
+                <div style="font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px;">Defensive Rationale</div>
+                <div id="fix-rationale-text" style="font-size:12px; color:var(--text-secondary); line-height:1.4;">Binding parameters prevents input characters from altering SQL statement structure.</div>
+              </div>
+              <div style="background:var(--bg-secondary); padding:12px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-subtle);">
+                <div style="font-size:10px; font-weight:800; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px;">Allowlisted Project Test Validation</div>
+                <div id="fix-validation-box" style="font-size:12px; color:#34d399; font-weight:600; display:flex; align-items:center; gap:6px;">
+                  <span id="fix-validation-icon">✓</span>
+                  <span id="fix-validation-badge" class="outcome-badge pass" style="font-size:9px;">PASSED</span>
+                  <span id="fix-test-command" style="font-family:var(--font-mono); font-size:11px; color:var(--text-secondary);">python -m py_compile</span>
+                </div>
+                <div id="fix-test-output" style="font-size:11px; color:var(--text-muted); margin-top:4px;">Checked 1 file; zero syntax errors detected.</div>
+              </div>
             </div>
 
             <!-- Code Diff Viewer -->
@@ -429,7 +446,7 @@
 
               <div class="fix-disclaimer">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12.01" y2="8"/><line x1="12" y1="12" x2="12" y2="16"/></svg>
-                <span>Notice: This action only updates the front-end demonstration state. No code was actually changed and no pull request was created.</span>
+                <span>Notice: Human approval registers operator authorization for local demonstration. Approval is not the same as applying a change; no working files or Git repositories are modified.</span>
               </div>
             </div>
           </div>
@@ -497,10 +514,10 @@
             Red &bull; Black Stealth Operations &bull; Authorized Local Testing
           </div>
           <h1>
-            Autonomous <em>Red-Team Security</em> War Room.
+            Multi-Agent <em>Security War Room</em> Prototype.
           </h1>
           <p>
-            Autonomous multi-agent security test workflow designed for authorized local applications. Orchestrates automated Red Agent test probes, Sentinel evidence verification, Fix Agent remediation synthesis, and Auditor regression auditing with zero manual friction.
+            Multi-agent security test workflow designed for authorized local applications with human-in-the-loop review. Orchestrates controlled Red Agent test probes, Sentinel evidence verification, Fix Agent remediation synthesis with required operator approval, and Auditor regression verification.
           </p>
 
           <div class="hero-roles-bar">
@@ -620,7 +637,7 @@
       <div class="table-card" style="padding:28px; max-width:960px; margin:0 auto;">
         <h2 style="font-size:20px; font-weight:800; color:#fff; margin-bottom:12px;">AEGIS-AGENT Multi-Agent Security Architecture</h2>
         <p style="color:var(--text-secondary); line-height:1.7; margin-bottom:20px;">
-          AEGIS-AGENT is an autonomous cybersecurity workflow prototype. It demonstrates how multi-agent collaboration decomposes the security review lifecycle into specialized, auditable roles:
+          AEGIS-AGENT is a collaborative multi-agent cybersecurity workflow prototype with human-in-the-loop approval. It demonstrates how multi-agent collaboration decomposes the security review lifecycle into specialized, auditable roles:
         </p>
 
         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:24px;">
@@ -638,13 +655,13 @@
           </div>
           <div style="background:var(--bg-secondary); padding:16px; border-radius:var(--radius-md); border:1px solid var(--border-subtle);">
             <div style="color:#34d399; font-weight:700; margin-bottom:4px;">4. Auditor Agent</div>
-            <p style="font-size:12px; color:var(--text-secondary);">Executes regression test suites to guarantee the vulnerability is not reproducible and user flows remain unhindered.</p>
+            <p style="font-size:12px; color:var(--text-secondary);">Executes independent regression test suites to verify whether the vulnerability is remediated or remains reproducible.</p>
           </div>
         </div>
 
         <div class="notice-box" style="margin-bottom:0;">
           <div class="notice-box-text">
-            <strong>Prototype Implementation:</strong> Pure front-end demonstration interface. No backend connections, live vulnerability scanners, or automated code writes are performed.
+            <strong>Prototype Implementation:</strong> Bounded local demonstration prototype connected to a deterministic Stage 2 backend API skeleton. Scans are non-destructive and restricted to allowlisted local fixtures; code changes require human approval and are not auto-applied.
           </div>
         </div>
       </div>
@@ -712,6 +729,48 @@
             </label>
 
           </div>
+        </div>
+
+        <!-- Simulation Outcome Selector (Stage 2 Demo Options) -->
+        <div class="form-group">
+          <label class="form-label">Simulation Workflow Outcome</label>
+          <div class="outcome-options-grid">
+            
+            <label class="outcome-option-card selected" data-outcome="complete">
+              <input type="radio" name="simulation-outcome" value="complete" class="outcome-radio" checked>
+              <div class="outcome-card-content">
+                <div class="outcome-header">
+                  <span class="outcome-badge pass">PASS</span>
+                  <span class="outcome-title">Complete</span>
+                </div>
+                <div class="outcome-desc">All agents complete; finding remediated</div>
+              </div>
+            </label>
+
+            <label class="outcome-option-card" data-outcome="needs_review">
+              <input type="radio" name="simulation-outcome" value="needs_review" class="outcome-radio">
+              <div class="outcome-card-content">
+                <div class="outcome-header">
+                  <span class="outcome-badge review">ALERT</span>
+                  <span class="outcome-title">Needs Review</span>
+                </div>
+                <div class="outcome-desc">Sentinel flags risk; pause for operator</div>
+              </div>
+            </label>
+
+            <label class="outcome-option-card" data-outcome="failed">
+              <input type="radio" name="simulation-outcome" value="failed" class="outcome-radio">
+              <div class="outcome-card-content">
+                <div class="outcome-header">
+                  <span class="outcome-badge fail">FAIL</span>
+                  <span class="outcome-title">Regression Fail</span>
+                </div>
+                <div class="outcome-desc">Auditor confirms vulnerability reproduced</div>
+              </div>
+            </label>
+
+          </div>
+          <div class="form-hint">Choose server mock behavior to demonstrate complete, needs_review, or failed states.</div>
         </div>
 
         <!-- Scope Confirmation Checkbox -->

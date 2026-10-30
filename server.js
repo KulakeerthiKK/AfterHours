@@ -1,9 +1,10 @@
-// AEGIS-AGENT Local Prototype Server (Zero Dependencies)
-// Uses native Node.js core modules only.
+// AEGIS-AGENT Local Prototype Server & API Skeleton (Zero Dependencies)
+// Uses native Node.js core modules only. Hosts both frontend and /api endpoints.
 
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { handleApiRequest } = require('./backend/routes');
 
 const PORT = process.env.PORT || 3000;
 const BASE_DIR = __dirname;
@@ -18,7 +19,8 @@ const MIME_TYPES = {
   '.jpg': 'image/jpeg',
   '.ico': 'image/x-icon',
   '.txt': 'text/plain; charset=utf-8',
-  '.md': 'text/plain; charset=utf-8'
+  '.md': 'text/plain; charset=utf-8',
+  '.pdf': 'application/pdf'
 };
 
 function serveFile(req, res) {
@@ -90,14 +92,22 @@ const server = http.createServer((req, res) => {
   // Add basic security headers
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-Prototype-Notice', 'AEGIS-AGENT-Local-Demo');
+
+  // Route API requests to backend skeleton
+  if (req.url.startsWith('/api/') || req.url === '/api') {
+    handleApiRequest(req, res);
+    return;
+  }
+
   serveFile(req, res);
 });
 
 server.listen(PORT, '127.0.0.1', () => {
   console.log('====================================================');
-  console.log('🛡️  AEGIS-AGENT Security War Room UI is running!');
+  console.log('🛡️  AEGIS-AGENT Security War Room API & UI is running!');
   console.log('----------------------------------------------------');
-  console.log(`📡 Local URL: http://localhost:${PORT}`);
+  console.log(`📡 Local Frontend: http://localhost:${PORT}`);
+  console.log(`🔌 Backend API:    http://localhost:${PORT}/api/runs`);
   console.log('🔒 Mode: Local Prototype (Authorized Scope Only)');
   console.log('ℹ️  Notice: Front-end demo - no real scans or code changes');
   console.log('====================================================');
@@ -112,4 +122,3 @@ server.on('error', (e) => {
     console.error('Server error:', e);
   }
 });
-
