@@ -1,0 +1,50 @@
+# =========================================================================
+# AEGIS-AGENT - Security & Environment Ignore Rules
+# Strictly prevents API keys, database credentials, and secrets from Git
+# =========================================================================
+
+# Environment variables & Secret API Keys (CRITICAL)
+.env
+.env.local
+.env.development
+.env.production
+.env.staging
+.env.*
+!.env.example
+*.key
+*.pem
+*.secret
+*.token
+credentials.json
+service-account*.json
+
+# Local Databases, SQLite & Transient Storage
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal
+*.db-wal
+data_memory.json
+data/
+*.log
+
+# Large media & Scratch artifacts
+*.mp4
+*.mov
+*.avi
+scratch_video_frames/
+scratch/
+
+# Node modules & Package Artifacts
+node_modules/
+package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Operating System & IDE Files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

@@ -4,7 +4,37 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+
+// Safe native .env file loader (Zero external dependencies)
+function loadEnvFile() {
+  const envPath = path.join(__dirname, '.env');
+  if (fs.existsSync(envPath)) {
+    try {
+      const content = fs.readFileSync(envPath, 'utf8');
+      content.split(/\r?\n/).forEach(line => {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) return;
+        const eqIdx = trimmed.indexOf('=');
+        if (eqIdx !== -1) {
+          const key = trimmed.slice(0, eqIdx).trim();
+          const val = trimmed.slice(eqIdx + 1).trim().replace(/^['"](.*)['"]$/, '$1');
+          if (!process.env[key]) {
+            process.env[key] = val;
+          }
+        }
+      });
+    } catch (e) {
+      console.warn('Note: Could not parse local .env file:', e.message);
+    }
+  }
+}
+loadEnvFile();
+
 const { handleApiRequest } = require('./backend/routes');
+const { initDb } = require('./backend/db');
+
+// Initialize database storage (PostgreSQL or persistent native SQLite)
+initDb().catch(err => console.warn('Database initialization note:', err.message));
 
 const PORT = process.env.PORT || 3000;
 const BASE_DIR = __dirname;
@@ -27,6 +57,13 @@ function serveFile(req, res) {
   let reqPath = decodeURI(req.url.split('?')[0]);
   if (reqPath === '/' || reqPath === '') {
     reqPath = '/index.html';
+  }
+
+  // Security barrier: Strictly forbid access to .env, .git, and hidden credentials
+  if (reqPath.startsWith('/.') || reqPath.includes('/.env') || reqPath.includes('/.git') || reqPath.includes('/migrations')) {
+    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('403 Forbidden: Protected System File');
+    return;
   }
 
   const safePath = path.normalize(reqPath).replace(/^(\.\.[\/\\])+/, '');

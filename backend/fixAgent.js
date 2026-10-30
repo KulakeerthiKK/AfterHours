@@ -184,7 +184,7 @@ function validateFindingInput(input) {
   }
 
   // Validate finding has required identifiers
-  if (!finding.id && !input.finding_id) {
+  if (!finding.id && !finding.finding_id && !input.finding_id) {
     return { valid: false, error: 'Malformed finding: Missing finding ID.' };
   }
 

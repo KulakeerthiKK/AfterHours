@@ -1,55 +1,191 @@
-# AEGIS-AGENT — Multi-Agent Security War Room Prototype
+# AEGIS-AGENT — Autonomous Security Operations Platform
 
-[![Theme](https://img.shields.io/badge/theme-red%20%26%20black%20stealth-red.svg)](#)
-[![Secondary Theme](https://img.shields.io/badge/theme-warm%20ivory%20editorial-amber.svg)](#)
-[![Prototype Status](https://img.shields.io/badge/status-multi--agent--prototype-crimson.svg)](#)
+[![Theme](https://img.shields.io/badge/theme-cyber%20lime%20%26%20obsidian%20(xbow)-lime.svg)](#)
+[![Secondary Theme](https://img.shields.io/badge/theme-red%20%26%20black%20stealth-red.svg)](#)
+[![Editorial Theme](https://img.shields.io/badge/theme-warm%20ivory%20atelier-amber.svg)](#)
+[![Prototype Status](https://img.shields.io/badge/status-P0--P2%20complete-brightgreen.svg)](#)
 [![Authorized Scope](https://img.shields.io/badge/scope-local--authorized--only-blue.svg)](#)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-zero-emerald.svg)](#)
 
-> **Persistent System Notice:**  
+> **Mandatory Front-End Demo Notice:**  
 > **Front-end demo — no real scans or code changes.**  
-> Prototype for explicitly authorized local testing only. Arbitrary public scanning, automated repository writing, and destructive exploit execution are strictly disabled. All candidate code changes require human-in-the-loop approval.
+> Prototype for explicitly authorized local testing only (`Local training app`, `localhost:8080`, `local-demo-target`). Arbitrary public scanning, automated repository writing, and destructive exploit execution are strictly prohibited. All candidate code changes require explicit human-in-the-loop authorization.
 
 ---
 
-## 🎯 Overview & Concept
+## 🎯 Executive Overview & Design Vision
 
-**AEGIS-AGENT** is a cybersecurity war room prototype designed for authorized local applications. It implements a multi-agent security test workflow with mandatory **human-in-the-loop review**, decomposing application security review into specialized, auditable roles:
+**AEGIS-AGENT** has been upgraded into a dynamic, dark, and cinematic security operations platform inspired by the visual language of modern autonomous cybersecurity engineering (near-black charcoal canvas `#020708`, acid/lime-green highlights `#A3E635`, subtle ambient glows, split hero, interactive attack graph visualizer, and terminal-grade evidence inspectors).
 
-1. **Scope Controller (`scope_check`)**: Validates target whitelist authorization and explicit user scope consent.
-2. **Red Agent (`red_agent`)**: Executes predefined, non-destructive test probes against the authorized local fixture.
-3. **Sentinel Agent (`sentinel_agent`)**: Ingests HTTP evidence and verifies exploit signatures to confirm findings before any fix can be proposed.
-4. **Fix Agent (`fix_agent`)**: Synthesizes defensive remediation code diffs in an isolated memory sandbox (human approval required; never auto-applied).
-5. **Auditor Agent (`auditor_agent`)**: Runs independent regression test matrices to verify whether the vulnerability is remediated or remains reproducible.
+The platform coordinates a **5-stage multi-agent gatekeeper workflow** with strict human governance:
+
+1. **Scope Controller (`scope_check`)**: Server-side allowlist gatekeeper ensuring scans only execute against authorized local training targets.
+2. **Red Agent (`red_agent`)**: Executes predefined, non-destructive test probes against the authorized fixture and records empirical proof.
+3. **Sentinel Agent (`sentinel_agent`)**: Ingests HTTP evidence and verifies exploit signatures (`CONFIRMED`, `NEEDS_REVIEW`, `NOT_CONFIRMED`) before any remediation agent can be invoked.
+4. **Fix Agent (`fix_agent`)**: Synthesizes minimal candidate unified diffs in temporary isolated worktrees. Never writes, commits, merges, or pushes changes without human approval.
+5. **Auditor Agent (`auditor_agent`)**: Runs independent regression test matrices to verify that the vulnerability is closed and original behavior remains intact.
 
 ```
 ┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
 │ 1. Scope Check  │ ───►  │  2. Red Agent   │ ───►  │3. Sentinel Agent│ ───►  │  4. Fix Agent   │ ───►  │5. Auditor Agent │
-│ (Target Bounds) │       │ (Probing)       │       │ (Confirm Evid.) │       │ (Remediation)   │       │ (Indep. Check)  │
+│ (Target Bounds) │       │ (Local Probing) │       │ (Confirm Evid.) │       │ (Worktree Diff) │       │ (Indep. Check)  │
 └─────────────────┘       └─────────────────┘       └─────────────────┘       └─────────────────┘       └─────────────────┘
                                                                                        │
                                                                                        ▼
                                                                            ┌───────────────────────┐
                                                                            │  Human Approval Gate  │
-                                                                           │ (Never Auto-Applied)  │
+                                                                           │ (Mandatory Sign-off)  │
                                                                            └───────────────────────┘
 ```
 
 ---
 
-## ⚡ Quick Start & Live Application
+## ⚡ Quick Start & Verification
 
 Access the live interface locally at:
 
 👉 **[http://localhost:3000](http://localhost:3000)**
 
-### Start Server:
+### Environment Configuration & Secrets Management
+1. Copy the provided `.env.example` template to a local `.env` file:
+   ```powershell
+   Copy-Item .env.example .env
+   ```
+2. Populate your local credentials inside `.env`:
+   - `OPENROUTER_API_KEY`: Server-side OpenRouter API secret.
+   - `OPENROUTER_BASE_URL`: `https://openrouter.ai/api/v1`
+   - `OPENROUTER_MODEL`: Selected LLM (e.g. `google/gemini-2.5-flash`, `openai/gpt-4o-mini`, `anthropic/claude-3.5-sonnet`).
+   - `DATABASE_URL`: PostgreSQL connection string (Supabase or local PostgreSQL).
+3. **Safety Protection**:
+   - `.env` and local database files are strictly ignored by Git in `.gitignore`.
+   - The native Node.js HTTP server blocks direct static requests to `.env`, `.git`, or hidden credentials with `403 Forbidden`.
+   - Keys are never logged, exported to client-side bundles, or returned in API responses.
+
+### Database Persistence & PostgreSQL Schema
+- **PostgreSQL Connection**: When `DATABASE_URL` is configured and `pg` is installed, the server connects via a connection pool and applies versioned migrations from [`migrations/001_initial_schema.sql`](file:///c:/Users/dell/Desktop/AfterHours/migrations/001_initial_schema.sql).
+- **Native Embedded Fallback**: When running locally without an external database instance, the backend automatically persists runs, findings, agent events, and approvals into a high-performance native SQLite database (`node:sqlite`).
+- **Health Endpoint**: `GET /api/health` reports database connectivity and AI configuration without exposing credentials.
+
+### Start Server
 ```powershell
 npm start
 # OR
 node server.js
 ```
-The application runs on native Node.js core modules with **zero external npm dependencies**. Both the frontend UI and the REST API are co-hosted on port `3000` with zero CORS issues.
+The server runs on native Node.js core modules with **zero external npm dependencies**. Both the frontend SPA and the REST API are co-hosted on port `3000`.
+
+### Reset State
+To reset the workflow state, runs, memory, and findings:
+```powershell
+Invoke-RestMethod -Uri "http://localhost:3000/api/reset" -Method Post
+```
+
+---
+
+## 🛡️ Functional Capabilities Implemented (P0 — P2)
+
+### P0: Real Local AST Scanner & Finding Normalization
+- **AST Semgrep & Gitleaks Pattern Rules**: Ingests local source files and produces normalized security findings (`finding_id`, `cwe`, `severity`, `file_path`, `line_start`, `line_end`, `evidence_refs`, `confidence_basis`, `remediation_status`, `fingerprint`).
+- **Strict Server-Side Target Allowlisting**: Enforced on all scan and probe requests.
+- **Evidence-Backed Sentinel**: Confirms findings with empirical HTTP reproduction proof and confidence scores.
+
+### P0: LLM / AST Fix Agent Integration
+- **Isolated Worktree Patch Synthesis**: Prepares minimal, reviewable unified diffs without modifying working files.
+- **Mandatory Human-in-the-Loop Sign-off**: Requires explicit operator approval (`POST /api/findings/:id/approve` or UI button) before candidate changes can be queued.
+
+### P0: Independent Regression Auditor
+- **Dual-Verification Suite**: Evaluates security regression (confirming the exploit breaker payload no longer bypasses defenses) independently from functional regression (verifying authentic logins, token creation, and legitimate downloads remain working).
+
+### P1: Interactive Multi-Stage Attack Path Visualizer
+- **Evidence-Linked Graph**: Interactive visual canvas with animated SVG connecting flows:
+  `Entry Point` ➔ `Vulnerable Component` ➔ `Reachable Asset Impact`.
+- **Inspector Drawer**: Click any graph node to inspect the underlying HTTP payload, response header, and AST match.
+- **Preconfigured Scenarios**:
+  - `path-sqli`: SQL Injection in Authentication Query (`authService.js:42`)
+  - `path-jwt`: JWT Algorithm "none" Signature Forgery (`tokenService.js:19`)
+  - `path-traversal`: Path Traversal in Report Downloader (`reportService.js:55`)
+
+### P1: Security Regression Memory
+- **Persistent Fingerprinting**: Tracks detection history by fingerprint (`times_seen`, `first_detected`, `last_verified`, `regression_status`, `checks_passed`).
+- **Memory API**: `GET /api/security-memory` returns live memory records.
+
+### P1: Explainable Risk Prioritization
+- **Multi-Factor Scoring**: Calculates 1.0–10.0 risk scores across P0–P2 priority tiers, balancing CVSS base score, live exploitability evidence (+1.0), and exposed public ingress (+0.5).
+
+### P1: CI/CD Security Guardian
+- **GitHub Actions Workflow**: `.github/workflows/security-guardian.yml` executes safe scanning on pull requests and archives SARIF / JSON artifacts.
+
+### P2: Secret Detection & Masking
+- **High-Entropy Token Detection**: Flags exposed keys (`demo_token_...`) with automatic character masking in reports and remediation guidance to migrate to environment variables.
+
+### P2: Audit Report Export
+- **JSON & Markdown Export**: `GET /api/runs/:id/report?format=json|md` or via the interactive export action buttons on Finding Detail and War Room views.
+
+---
+
+## 🎨 UI Architecture & View Sitemap
+
+| View | Nav ID | Purpose & Key Components |
+|---|---|---|
+| **Overview (Landing)** | `landing` | XBOW-inspired split hero, headline with lime gradient, 4 KPI metric cards, interactive terminal console (`aegis-ast-trace@local`) with live typewriter feed, tabs (`Attack Trace`, `AST Rules`, `Security Memory`), and 4 architecture feature pillars. |
+| **War Room (Live)** | `war-room` | Live 5-stage synchronous workflow HUD, simulation stopwatch, stage timeline, multi-agent status roster, detailed tabs (Evidence, Diff Viewer, Regression Checks, Telemetry Logs), and interactive simulation controls. |
+| **Attack Path** | `attackpath` | Visual node-and-edge attack graph with animated dashed SVG connectors, attack scenario switcher pills, and slide-out Evidence Inspector Drawer. |
+| **Finding Detail** | `findingdetail` | Deep-dive normalized finding inspection: CVSS risk score chip, evidence preview, unified diff with colored additions/deletions, explainable risk rationale, security regression memory, and Human Governance approval buttons. |
+| **Dashboard & History** | `dashboard` | Aggregated metrics, filterable history table (All, Complete, Needs Review, Failed), search input, and run inspection drawers. |
+| **Agent Telemetry** | `logs` | Real-time streaming log terminal with colored agent tags and timestamped JSON events. |
+| **Architecture** | `about` | Full architectural specification of agent contracts, isolated workspace boundaries, and security model. |
+
+### Visual Themes
+Toggle between 3 visual themes in the top navigation:
+- 🟢 **Cyber Lime (Default)**: Deep Obsidian `#020708` canvas with `#A3E635` acid-green highlights and subtle ambient glows (XBOW direction).
+- 🔴 **Red & Black**: Stealth Crimson `#E63946` on Pitch Obsidian `#08090D`.
+- 🏛️ **Warm Ivory Atelier**: Editorial print-inspired ivory `#F4F0E8` and terracotta `#A75D43`.
+
+---
+
+## 🔌 API Reference
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/runs` | `GET` | List all historical workflow runs |
+| `/api/runs` | `POST` | Launch a new 5-stage workflow run (`target_id`, `test_case`, `scope_confirmed`) |
+| `/api/runs/:id` | `GET` | Retrieve structured run state, stages, evidence, diff, and auditor results |
+| `/api/runs/:id/approve-fix` | `POST` | Record operator human approval for a run's remediation proposal |
+| `/api/runs/:id/reject-fix` | `POST` | Reject a candidate remediation proposal |
+| `/api/runs/:id/report` | `GET` | Export audit report (supports `?format=json` or `?format=md`) |
+| `/api/scans` | `POST` | Run local AST pattern scanner against allowlisted target |
+| `/api/scans/:id` | `GET` | Get scan progress and normalized findings list |
+| `/api/findings` | `GET` | Retrieve list of all normalized findings with risk scores |
+| `/api/findings/:id` | `GET` | Deep-dive finding details with evidence and regression memory |
+| `/api/findings/:id/verify` | `POST` | Run Sentinel Agent evidence verification check |
+| `/api/findings/:id/propose-fix`| `POST` | Synthesize minimal candidate unified diff in isolated worktree |
+| `/api/findings/:id/approve` | `POST` | Operator approval for candidate finding patch |
+| `/api/findings/:id/reject` | `POST` | Operator rejection for candidate finding patch |
+| `/api/findings/:id/regression` | `POST` | Auditor Agent regression check in disposable workspace |
+| `/api/attack-paths` | `GET` | List evidence-backed entry point ➔ vuln ➔ asset attack paths |
+| `/api/security-memory` | `GET` | Retrieve tracked security regression memory table |
+| `/api/reset` | `POST` | Reset all in-memory runs, scans, and memory state |
+
+---
+
+## 🧭 Demonstration Walkthrough Paths
+
+### Demo Path 1: Complete Autonomous Discovery & Fix
+1. Navigate to **Overview** (`http://localhost:3000`).
+2. Click **"Run AST Scanner"** to trigger local Semgrep pattern discovery.
+3. Automatically opens **Finding Detail** showing `FIND-CWE89-01` (SQL Injection, CVSS 9.2 P0).
+4. Inspect the live reproduction evidence and candidate parameterized query unified diff.
+5. Click **"Approve Patch"** to provide human governance sign-off.
+6. Click **"Run Auditor Check"** to execute the regression test matrix: confirms exploit breaker payload blocked, while authentic user logins pass.
+7. Switch to **Attack Path** to visualize the multi-stage exploit graph (`/api/login` ➔ `authService.js:42` ➔ `SQLite auth_users DB`).
+
+### Demo Path 2: Review / Rejection Workflow
+1. Navigate to **War Room (Live)** and click **"Start Demo Run"** in the top bar.
+2. Select **"Authentication check (CWE-287)"**.
+3. Select **"Sentinel Alert (needs_review)"** under Simulation Workflow Outcome.
+4. Check **"I confirm scope authorization"** and click **"Start Run"**.
+5. Observe the live 5-stage synchronous timeline: Sentinel pauses with an alert, preventing the Fix Agent from proposing a patch until manual evidence confirmation is provided.
+
 
 ---
 
