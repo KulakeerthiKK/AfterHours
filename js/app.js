@@ -1,11 +1,103 @@
-// AEGIS-AGENT Advanced Dynamic Frontend Controller
-// Coordinates real-time stopwatch, dynamic progress HUD, audio synth cues, split/unified diffs,
-// interactive regression replay suite, CVSS breakdowns, and clipboard actions.
+// AEGIS-AGENT Frontend Application Controller
+// Connected to Stage 2 Backend API skeleton (POST /api/runs, GET /api/runs/:run_id, GET /api/runs)
+// Deterministic mock workflow polling, responsive rendering, and dual-theme support.
 
 (function () {
   'use strict';
 
-  // Simulator Instance
+  // API Client Definition
+  const API_BASE = '/api';
+
+  const apiClient = {
+    async createRun(target_id, test_case, scope_confirmed, simulation_outcome) {
+      const res = await fetch(`${API_BASE}/runs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          target_id,
+          test_case,
+          scope_confirmed,
+          simulation_outcome
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || data.error || 'Failed to initiate run');
+      }
+      return data;
+    },
+
+    async getRun(run_id) {
+      const res = await fetch(`${API_BASE}/runs/${encodeURIComponent(run_id)}`, {
+        headers: { 'Accept': 'application/json' }
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || data.error || `Run ${run_id} not found`);
+      }
+      return data;
+    },
+
+    async listRuns() {
+      const res = await fetch(`${API_BASE}/runs`, {
+        headers: { 'Accept': 'application/json' }
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || data.error || 'Failed to fetch runs list');
+      }
+      return data.runs || [];
+    },
+
+    async getAuditReport(run_id) {
+      const res = await fetch(`${API_BASE}/runs/${encodeURIComponent(run_id)}/report`, {
+        headers: { 'Accept': 'application/json' }
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || data.error || 'Failed to fetch audit report');
+      }
+      return data;
+    },
+
+    async approveFix(run_id) {
+      const res = await fetch(`${API_BASE}/runs/${encodeURIComponent(run_id)}/approve-fix`, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' }
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || data.error || 'Failed to approve fix');
+      }
+      return data;
+    },
+
+    async rejectFix(run_id) {
+      const res = await fetch(`${API_BASE}/runs/${encodeURIComponent(run_id)}/reject-fix`, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' }
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || data.error || 'Failed to reject fix');
+      }
+      return data;
+    },
+
+    async resetStore() {
+      const res = await fetch(`${API_BASE}/reset`, {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' }
+      });
+      return await res.json();
+    }
+  };
+
+  // Sound Synthesizer instance for audio cues
   const simulator = new window.AegisWorkflowSimulator();
 
   // Application State
@@ -16,8 +108,10 @@
     diffViewMode: 'unified', // 'unified' or 'split'
     dashboardFilter: 'all',
     searchQuery: '',
-    recentRuns: [...window.AEGIS_MOCK.recentRuns],
-    selectedTestCaseId: 'input-validation'
+    selectedTestCaseId: 'input-validation',
+    currentRunData: null,
+    pollTimer: null,
+    recentRuns: []
   };
 
   // DOM Elements Cache
@@ -108,6 +202,12 @@
 
     // Proposed Fix Elements
     el.fixSummaryText = document.getElementById('fix-summary-text');
+    el.fixRationaleText = document.getElementById('fix-rationale-text');
+    el.fixValidationBox = document.getElementById('fix-validation-box');
+    el.fixValidationIcon = document.getElementById('fix-validation-icon');
+    el.fixValidationBadge = document.getElementById('fix-validation-badge');
+    el.fixTestCommand = document.getElementById('fix-test-command');
+    el.fixTestOutput = document.getElementById('fix-test-output');
     el.diffFilePath = document.getElementById('diff-file-path');
     el.diffStatsAdd = document.getElementById('diff-stats-add');
     el.diffStatsDel = document.getElementById('diff-stats-del');
@@ -152,9 +252,9 @@
     if (!el.toastContainer) return;
     const toast = document.createElement('div');
     toast.className = 'toast';
-    if (type === 'success') toast.style.borderLeftColor = 'var(--agent-auditor)';
-    if (type === 'warn') toast.style.borderLeftColor = 'var(--agent-sentinel)';
-    if (type === 'error') toast.style.borderLeftColor = 'var(--agent-red)';
+    if (type === 'success') toast.style.borderLeftColor = 'var(--status-green)';
+    if (type === 'warn') toast.style.borderLeftColor = 'var(--status-amber)';
+    if (type === 'error') toast.style.borderLeftColor = 'var(--accent-red)';
 
     toast.innerHTML = `<div>${message}</div>`;
     el.toastContainer.appendChild(toast);
@@ -164,10 +264,9 @@
       toast.style.transform = 'translateY(10px)';
       toast.style.transition = 'all 0.3s ease';
       setTimeout(() => toast.remove(), 300);
-    }, 3200);
+    }, 3500);
   }
 
-  // Stopwatch Formatter (mm:ss.s)
   function formatStopwatch(ms) {
     const totalSecs = Math.floor(ms / 1000);
     const tenths = Math.floor((ms % 1000) / 100);
@@ -178,7 +277,6 @@
     return `⏱ ${mStr}:${sStr}.${tenths}s`;
   }
 
-  // System Clock
   function startClock() {
     function update() {
       const now = new Date();
@@ -190,7 +288,6 @@
     setInterval(update, 1000);
   }
 
-  // Main View Navigation
   function setNav(targetNav) {
     state.activeNav = targetNav;
 
@@ -205,11 +302,10 @@
     });
 
     if (targetNav === 'dashboard') {
-      renderDashboardRuns();
+      fetchRecentRunsFromApi();
     }
   }
 
-  // War Room Sub-tab Navigation
   function setWarRoomTab(tabName) {
     state.activeDetailTab = tabName;
 
@@ -231,72 +327,156 @@
     });
   }
 
-  // Update Dynamic HUD & Agent Pipeline Network Graph
-  function updateHUD(simState) {
-    const run = simState.run;
+  // =========================================================================
+  // BACKEND API POLLING & WORKFLOW SYNCHRONIZATION
+  // =========================================================================
+
+  function startPollingRun(runId) {
+    stopPollingRun();
+
+    async function poll() {
+      try {
+        const runData = await apiClient.getRun(runId);
+        state.currentRunData = runData;
+        renderRunFromApi(runData);
+
+        // Check if terminal state reached
+        if (runData.status === 'complete' || runData.status === 'needs_review' || runData.status === 'failed') {
+          stopPollingRun();
+          simulator.playCue(runData.status === 'complete' ? 'run_done' : 'alert');
+
+          if (runData.status === 'complete') {
+            showToast(`Workflow ${runData.run_id} completed successfully (simulated)`, 'success');
+          } else if (runData.status === 'needs_review') {
+            showToast(`Workflow ${runData.run_id} requires human review at Sentinel stage`, 'warn');
+          } else if (runData.status === 'failed') {
+            showToast(`Workflow ${runData.run_id} failed: Regression bypass detected`, 'error');
+          }
+
+          fetchRecentRunsFromApi();
+        } else {
+          state.pollTimer = setTimeout(poll, 800);
+        }
+      } catch (err) {
+        stopPollingRun();
+        showToast(`API error polling ${runId}: ${err.message}`, 'error');
+      }
+    }
+
+    poll();
+  }
+
+  function stopPollingRun() {
+    if (state.pollTimer) {
+      clearTimeout(state.pollTimer);
+      state.pollTimer = null;
+    }
+  }
+
+  // Render Full UI From Server-Side Run Data
+  function renderRunFromApi(run) {
     if (!run) return;
+    state.currentRunData = run;
 
-    if (el.simRunTag) el.simRunTag.textContent = run.id;
-    if (el.activeTargetLabel) el.activeTargetLabel.textContent = run.targetLabel;
-    if (el.simStopwatch) el.simStopwatch.textContent = formatStopwatch(simState.elapsedMs);
+    // 1. HUD & Progress
+    if (el.simRunTag) el.simRunTag.textContent = run.run_id;
+    if (el.activeTargetLabel) el.activeTargetLabel.textContent = run.target_id;
+    if (el.simStopwatch) el.simStopwatch.textContent = formatStopwatch(run.elapsed_ms || 0);
 
-    // Progress Bar Fill
-    const pct = simState.progressPct;
+    // Compute progress percentage based on stage statuses
+    let completedStages = 0;
+    const stages = run.stage_statuses || {};
+    const order = run.stage_order || ['scope_check', 'red_agent', 'sentinel_agent', 'fix_agent', 'auditor_agent'];
+
+    order.forEach(stg => {
+      if (stages[stg] && (stages[stg].status === 'complete' || stages[stg].status === 'needs_review' || stages[stg].status === 'failed')) {
+        completedStages++;
+      }
+    });
+
+    const pct = run.status === 'complete' ? 100 : Math.min(100, Math.round((completedStages / order.length) * 100));
     if (el.progressBarFill) el.progressBarFill.style.width = pct + '%';
     if (el.simProgressPct) el.simProgressPct.textContent = `${pct}% Complete`;
 
     // State Badge
     if (el.simStateBadge) {
       el.simStateBadge.className = `sim-state-badge ${run.status}`;
-      el.simStateBadge.innerHTML = simState.isPaused 
-        ? '<span>⏸</span> PAUSED' 
-        : run.status === 'completed' 
-          ? '<span>✓</span> COMPLETED' 
-          : '<span>●</span> SIMULATING';
+      el.simStateBadge.innerHTML = run.status === 'complete'
+        ? '<span>✓</span> COMPLETED'
+        : run.status === 'needs_review'
+          ? '<span>⚠️</span> NEEDS REVIEW'
+          : run.status === 'failed'
+            ? '<span>✕</span> FAILED'
+            : '<span>●</span> SIMULATING';
     }
 
-    if (el.btnPauseResume) {
-      el.btnPauseResume.innerHTML = simState.isPaused
-        ? '<span>▶</span> Resume Demo'
-        : '<span>⏸</span> Pause Demo';
-    }
+    // 2. Multi-Agent Pipeline Network Nodes
+    const activeStage = run.current_stage;
+    const stageNodeMap = {
+      scope_check: el.netNodeSystem,
+      red_agent: el.netNodeRed,
+      sentinel_agent: el.netNodeSentinel,
+      fix_agent: el.netNodeFix,
+      auditor_agent: el.netNodeAuditor
+    };
 
-    // Update Multi-Agent Graph Network Nodes
-    const stageIdx = simulator.currentStageIndex;
-    const nodes = [el.netNodeSystem, el.netNodeRed, el.netNodeSentinel, el.netNodeFix, el.netNodeAuditor];
-
-    nodes.forEach((node, i) => {
+    order.forEach(stgKey => {
+      const node = stageNodeMap[stgKey];
       if (!node) return;
-      const isCurrent = (i === stageIdx && run.status === 'running');
-      const isDone = (i < stageIdx || run.status === 'completed');
-      node.classList.toggle('active-node', isCurrent || isDone);
+      const stg = stages[stgKey];
+      const isActive = stg && stg.status === 'running';
+      const isDone = stg && (stg.status === 'complete' || stg.status === 'needs_review' || stg.status === 'failed');
+      node.classList.toggle('active-node', isActive || isDone);
     });
 
-    if (el.netArrows) {
-      el.netArrows.forEach((arr, i) => {
-        if (!arr) return;
-        arr.classList.toggle('flow-active', i === stageIdx - 1);
-      });
-    }
-
     if (el.netActiveStepLabel) {
-      const stage = run.stages[Math.min(stageIdx, run.stages.length - 1)];
-      el.netActiveStepLabel.textContent = stage ? `${stage.name} (${stage.agent})` : 'Workflow Completed';
+      const activeStageObj = stages[activeStage];
+      el.netActiveStepLabel.textContent = activeStageObj
+        ? `${activeStageObj.name} (${activeStageObj.agent})`
+        : `Run Status: ${run.status.toUpperCase()}`;
     }
 
-    if (el.netLatencyTag && run.latencyImpact) {
-      el.netLatencyTag.textContent = `Latency: ${run.latencyImpact}`;
+    // 3. Render Timeline Stages
+    renderTimelineFromApi(run);
+
+    // 4. Render Finding & Evidence
+    if (run.mock_results && run.mock_results.finding) {
+      renderFindingFromApi(run.mock_results.finding);
+    }
+
+    // 5. Render Proposed Fix
+    if (run.mock_results && run.mock_results.proposed_fix) {
+      renderFixFromApi(run.mock_results.proposed_fix, run);
+    }
+
+    // 6. Render Regression Results
+    if (run.mock_results && run.mock_results.regression) {
+      renderRegressionFromApi(run.mock_results.regression);
+    }
+
+    // 7. Render Logs
+    if (run.logs) {
+      const logText = run.logs.join('\n');
+      if (el.fullLogsViewer) el.fullLogsViewer.textContent = logText;
+      if (el.warroomLogsViewer) {
+        el.warroomLogsViewer.textContent = logText;
+        el.warroomLogsViewer.scrollTop = el.warroomLogsViewer.scrollHeight;
+      }
     }
   }
 
-  // Render 5 Stages Timeline
-  function renderTimeline() {
-    const run = simulator.currentRun;
-    if (!run || !el.timelineStagesList) return;
-
+  // Render 5 Stages Timeline from API Data
+  function renderTimelineFromApi(run) {
+    if (!el.timelineStagesList || !run.stage_statuses) return;
     el.timelineStagesList.innerHTML = '';
 
-    run.stages.forEach((stage, idx) => {
+    const order = run.stage_order || ['scope_check', 'red_agent', 'sentinel_agent', 'fix_agent', 'auditor_agent'];
+    const stages = run.stage_statuses;
+
+    order.forEach((stageId, idx) => {
+      const stage = stages[stageId];
+      if (!stage) return;
+
       const item = document.createElement('div');
       item.className = `stage-item ${stage.status}`;
 
@@ -305,6 +485,8 @@
         indicatorContent = '✓';
       } else if (stage.status === 'running') {
         indicatorContent = '●';
+      } else if (stage.status === 'needs_review') {
+        indicatorContent = '⚠️';
       } else if (stage.status === 'failed') {
         indicatorContent = '✕';
       }
@@ -317,8 +499,8 @@
             <span class="stage-agent-tag">${stage.agent}</span>
           </div>
           <div class="stage-meta">
-            <span class="status-badge ${stage.status}">${stage.status}</span>
-            ${stage.completedAt ? `<span>at ${stage.completedAt}</span>` : ''}
+            <span class="status-badge ${stage.status}">${stage.status.replace('_', ' ')}</span>
+            ${stage.completed_at ? `<span>at ${stage.completed_at}</span>` : ''}
           </div>
           <div class="stage-desc">${stage.activity || stage.summary}</div>
         </div>
@@ -326,166 +508,157 @@
       el.timelineStagesList.appendChild(item);
     });
 
-    updateAgentPills(run);
+    // Update Agent Status Pills
+    updateAgentPillsFromApi(stages);
   }
 
-  // Update Agent Status Pills
-  function updateAgentPills(run) {
-    if (!run) return;
-
-    const resetPill = (elem) => {
-      if (!elem) return;
-      elem.className = 'agent-activity-pill idle';
-      elem.textContent = 'Idle';
+  function updateAgentPillsFromApi(stages) {
+    const updatePill = (elem, stage) => {
+      if (!elem || !stage) return;
+      if (stage.status === 'running') {
+        elem.className = 'agent-activity-pill active';
+        elem.textContent = 'Active';
+      } else if (stage.status === 'complete') {
+        elem.className = 'agent-activity-pill done';
+        elem.textContent = 'Complete';
+      } else if (stage.status === 'needs_review') {
+        elem.className = 'agent-activity-pill active';
+        elem.textContent = 'Review';
+      } else if (stage.status === 'failed') {
+        elem.className = 'agent-activity-pill active';
+        elem.textContent = 'Failed';
+      } else {
+        elem.className = 'agent-activity-pill idle';
+        elem.textContent = 'Queued';
+      }
     };
 
-    resetPill(el.agentPillRed);
-    resetPill(el.agentPillSentinel);
-    resetPill(el.agentPillFix);
-    resetPill(el.agentPillAuditor);
-
-    run.stages.forEach((stage) => {
-      let pillElem = null;
-      if (stage.agent.includes('Red Agent')) pillElem = el.agentPillRed;
-      else if (stage.agent.includes('Sentinel Agent')) pillElem = el.agentPillSentinel;
-      else if (stage.agent.includes('Fix Agent')) pillElem = el.agentPillFix;
-      else if (stage.agent.includes('Auditor Agent')) pillElem = el.agentPillAuditor;
-
-      if (!pillElem) return;
-
-      if (stage.status === 'running') {
-        pillElem.className = 'agent-activity-pill active';
-        pillElem.textContent = 'Active';
-      } else if (stage.status === 'complete') {
-        pillElem.className = 'agent-activity-pill done';
-        pillElem.textContent = 'Complete';
-      }
-    });
+    updatePill(el.agentPillRed, stages['red_agent']);
+    updatePill(el.agentPillSentinel, stages['sentinel_agent']);
+    updatePill(el.agentPillFix, stages['fix_agent']);
+    updatePill(el.agentPillAuditor, stages['auditor_agent']);
   }
 
-  // Render Finding Details with CVSS Breakdown
-  function renderFindingDetails() {
-    const run = simulator.currentRun;
-    if (!run || !run.finding) return;
-
-    const f = run.finding;
+  // Render Finding From API mock_results
+  function renderFindingFromApi(f) {
+    if (!f) return;
     if (el.findingTitle) el.findingTitle.textContent = f.title;
     if (el.findingSeverity) {
-      el.findingSeverity.textContent = f.severity + ' SEVERITY';
+      el.findingSeverity.textContent = `${f.severity} SEVERITY`;
       el.findingSeverity.className = `severity-pill ${f.severity.toLowerCase()}`;
     }
     if (el.findingCvss) el.findingCvss.textContent = `${f.cvss} (${f.severity})`;
     if (el.findingCwe) el.findingCwe.textContent = f.cwe;
-    if (el.findingComponent) el.findingComponent.textContent = f.affectedComponent;
+    if (el.findingComponent) el.findingComponent.textContent = f.affected_component;
     if (el.findingCategory) el.findingCategory.textContent = f.category;
-    if (el.findingExplanation) el.findingExplanation.textContent = f.shortExplanation;
+    if (el.findingExplanation) el.findingExplanation.textContent = f.short_explanation;
 
-    // Render CVSS Vector Chips
-    if (el.cvssVectorGrid && run.cvssBreakdown) {
-      const b = run.cvssBreakdown;
-      el.cvssVectorGrid.innerHTML = `
-        <div class="cvss-chip"><strong>AV:</strong> ${b.av}</div>
-        <div class="cvss-chip"><strong>AC:</strong> ${b.ac}</div>
-        <div class="cvss-chip"><strong>PR:</strong> ${b.pr}</div>
-        <div class="cvss-chip"><strong>UI:</strong> ${b.ui}</div>
-        <div class="cvss-chip"><strong>Scope:</strong> ${b.scope}</div>
-        <div class="cvss-chip"><strong>Conf:</strong> ${b.conf}</div>
-        <div class="cvss-chip"><strong>Integ:</strong> ${b.integ}</div>
-      `;
-    }
-
-    renderEvidenceCode(state.activeEvidenceTab);
-    renderReviewControlsState();
+    renderEvidenceCodeFromApi(f.evidence, state.activeEvidenceTab);
   }
 
-  // Render Evidence Subtab
-  function renderEvidenceCode(tabType) {
-    state.activeEvidenceTab = tabType;
-    const run = simulator.currentRun;
-    if (!run || !run.finding || !el.evidenceCodeViewer) return;
+  function renderEvidenceCodeFromApi(evidence, tabType) {
+    if (!evidence || !el.evidenceCodeViewer) return;
 
     el.evidenceTabBtns.forEach(btn => {
       btn.classList.toggle('active', btn.getAttribute('data-evidence') === tabType);
     });
 
-    const ev = run.finding.evidence;
     let text = '';
-    if (tabType === 'request') text = ev.httpRequest;
-    else if (tabType === 'response') text = ev.httpResponse;
-    else if (tabType === 'hex') text = ev.hexView || 'Hex view not available.';
-    else if (tabType === 'logs') text = ev.rawLogs;
-    else if (tabType === 'stack') text = ev.callStack;
+    if (tabType === 'request') text = evidence.http_request || evidence.httpRequest;
+    else if (tabType === 'response') text = evidence.http_response || evidence.httpResponse;
+    else if (tabType === 'hex') text = evidence.hex_view || evidence.hexView || 'Hex view not captured.';
+    else if (tabType === 'logs') text = evidence.raw_logs || evidence.rawLogs;
+    else if (tabType === 'stack') text = evidence.call_stack || evidence.callStack;
 
     el.evidenceCodeViewer.textContent = text || 'No evidence captured for this category.';
   }
 
-  // Render Prototype Review State
-  function renderReviewControlsState() {
-    const run = simulator.currentRun;
-    if (!run) return;
+  // Render Proposed Fix From API mock_results
+  function renderFixFromApi(fix, run) {
+    if (!fix) return;
+    if (el.fixSummaryText) el.fixSummaryText.textContent = fix.remediation_summary || fix.summary;
+    if (el.diffFilePath) el.diffFilePath.textContent = fix.file_path || (fix.changed_files && fix.changed_files[0]) || fix.filePath;
 
-    const status = run.reviewStatus || 'Needs review';
-    if (el.reviewStateDisplay) {
-      el.reviewStateDisplay.textContent = status.toUpperCase();
-      el.reviewStateDisplay.style.background = 
-        status === 'Confirmed' ? 'var(--agent-red-bg)' :
-        status === 'Needs review' ? 'var(--agent-sentinel-bg)' : 'rgba(100,116,139,0.2)';
-      el.reviewStateDisplay.style.color =
-        status === 'Confirmed' ? '#f87171' :
-        status === 'Needs review' ? '#fbbf24' : '#cbd5e1';
-      el.reviewStateDisplay.style.border = '1px solid ' + (
-        status === 'Confirmed' ? 'rgba(239,68,68,0.4)' :
-        status === 'Needs review' ? 'rgba(245,158,11,0.4)' : 'rgba(100,116,139,0.4)');
+    if (el.fixRationaleText && (fix.rationale || fix.summary)) {
+      el.fixRationaleText.textContent = fix.rationale || 'Mitigation eliminates untrusted input evaluation at component boundary.';
     }
 
-    [
-      { btn: el.btnReviewConfirm, name: 'Confirmed' },
-      { btn: el.btnReviewNeedsReview, name: 'Needs review' },
-      { btn: el.btnReviewNotConfirmed, name: 'Not confirmed' }
-    ].forEach(({ btn, name }) => {
-      if (btn) btn.classList.toggle('active', status === name);
-    });
-  }
+    if (el.fixTestCommand && fix.configured_test_command) {
+      el.fixTestCommand.textContent = fix.configured_test_command;
+    }
+    if (el.fixTestOutput && fix.test_output) {
+      el.fixTestOutput.textContent = fix.test_output;
+    }
+    if (el.fixValidationBadge) {
+      const valStatus = (fix.validation_status || 'passed').toUpperCase();
+      el.fixValidationBadge.textContent = valStatus;
+      if (valStatus === 'PASSED') {
+        el.fixValidationBadge.className = 'outcome-badge pass';
+        if (el.fixValidationIcon) el.fixValidationIcon.textContent = '✓';
+      } else if (valStatus === 'FAILED') {
+        el.fixValidationBadge.className = 'outcome-badge fail';
+        if (el.fixValidationIcon) el.fixValidationIcon.textContent = '✕';
+      } else {
+        el.fixValidationBadge.className = 'outcome-badge review';
+        if (el.fixValidationIcon) el.fixValidationIcon.textContent = '⚠️';
+      }
+    }
 
-  // Render Proposed Fix View (Unified and Split)
-  function renderProposedFix() {
-    const run = simulator.currentRun;
-    if (!run || !run.proposedFix) return;
+    // Update approval badge
+    if (el.fixStatusBadge) {
+      const appState = (run && run.approval_state) || fix.review_state || 'PENDING_HUMAN_APPROVAL';
+      if (appState === 'APPROVED_FOR_DEMO') {
+        el.fixStatusBadge.className = 'sim-watermark-tag';
+        el.fixStatusBadge.style.background = 'rgba(52, 211, 153, 0.2)';
+        el.fixStatusBadge.style.color = '#34D399';
+        el.fixStatusBadge.style.borderColor = 'rgba(52, 211, 153, 0.4)';
+        el.fixStatusBadge.textContent = 'Status: Approved (Demo Only)';
+      } else if (appState === 'REJECTED') {
+        el.fixStatusBadge.className = 'sim-watermark-tag';
+        el.fixStatusBadge.style.background = 'rgba(230, 57, 70, 0.2)';
+        el.fixStatusBadge.style.color = '#FF6B6B';
+        el.fixStatusBadge.style.borderColor = 'rgba(230, 57, 70, 0.4)';
+        el.fixStatusBadge.textContent = 'Status: Rejected';
+      } else {
+        el.fixStatusBadge.className = 'sim-watermark-tag';
+        el.fixStatusBadge.style.background = '';
+        el.fixStatusBadge.style.color = '';
+        el.fixStatusBadge.style.borderColor = '';
+        el.fixStatusBadge.textContent = 'Status: Pending Operator Approval';
+      }
+    }
 
-    const fix = run.proposedFix;
-    if (el.fixSummaryText) el.fixSummaryText.textContent = fix.summary;
-    if (el.diffFilePath) el.diffFilePath.textContent = fix.filePath;
-    if (el.diffStatsAdd) el.diffStatsAdd.textContent = `+${fix.diffStats.additions}`;
-    if (el.diffStatsDel) el.diffStatsDel.textContent = `-${fix.diffStats.deletions}`;
+    const stats = fix.diff_stats || fix.diffStats || { additions: 0, deletions: 0 };
+    if (el.diffStatsAdd) el.diffStatsAdd.textContent = `+${stats.additions}`;
+    if (el.diffStatsDel) el.diffStatsDel.textContent = `-${stats.deletions}`;
 
     if (!el.diffCodeBody) return;
     el.diffCodeBody.innerHTML = '';
 
+    const lines = fix.diff_lines || fix.diffLines || [];
+
     if (state.diffViewMode === 'unified') {
-      // Unified Diff View
-      fix.diffLines.forEach(line => {
+      lines.forEach(line => {
         const row = document.createElement('div');
         row.className = `diff-line ${line.type}`;
 
-        const oldGutter = line.oldLine !== null ? line.oldLine : '';
-        const newGutter = line.newLine !== null ? line.newLine : '';
+        const oldGutter = (line.old_line !== undefined ? line.old_line : line.oldLine) !== null ? (line.old_line ?? line.oldLine) : '';
+        const newGutter = (line.new_line !== undefined ? line.new_line : line.newLine) !== null ? (line.new_line ?? line.newLine) : '';
         const marker = line.type === 'addition' ? '+' : line.type === 'deletion' ? '-' : ' ';
-        const commentBadge = line.comment 
-          ? `<span class="diff-comment-callout">💡 ${escapeHtml(line.comment)}</span>` 
-          : '';
+        const comment = line.comment ? `<span class="diff-comment-callout">💡 ${escapeHtml(line.comment)}</span>` : '';
 
         row.innerHTML = `
           <div class="diff-gutter">${oldGutter}</div>
           <div class="diff-gutter">${newGutter}</div>
           <div class="diff-marker">${marker}</div>
-          <div class="diff-text">${escapeHtml(line.text)}${commentBadge}</div>
+          <div class="diff-text">${escapeHtml(line.text)}${comment}</div>
         `;
         el.diffCodeBody.appendChild(row);
       });
     } else {
-      // Side-by-Side Split Diff View
-      const oldLines = fix.diffLines.filter(l => l.type === 'context' || l.type === 'deletion');
-      const newLines = fix.diffLines.filter(l => l.type === 'context' || l.type === 'addition');
+      // Split Diff
+      const oldLines = lines.filter(l => l.type === 'context' || l.type === 'deletion');
+      const newLines = lines.filter(l => l.type === 'context' || l.type === 'addition');
       const maxRows = Math.max(oldLines.length, newLines.length);
 
       for (let i = 0; i < maxRows; i++) {
@@ -496,13 +669,13 @@
 
         const leftHtml = oL ? `
           <div class="split-diff-half ${oL.type === 'deletion' ? 'del' : ''}">
-            <div class="diff-gutter">${oL.oldLine || ''}</div>
+            <div class="diff-gutter">${oL.old_line ?? oL.oldLine ?? ''}</div>
             <div class="diff-text">${escapeHtml(oL.text)}</div>
           </div>` : '<div class="split-diff-half"></div>';
 
         const rightHtml = nL ? `
           <div class="split-diff-half ${nL.type === 'addition' ? 'add' : ''}">
-            <div class="diff-gutter">${nL.newLine || ''}</div>
+            <div class="diff-gutter">${nL.new_line ?? nL.newLine ?? ''}</div>
             <div class="diff-text">${escapeHtml(nL.text)}</div>
           </div>` : '<div class="split-diff-half"></div>';
 
@@ -510,13 +683,55 @@
         el.diffCodeBody.appendChild(row);
       }
     }
+  }
 
-    if (el.fixStatusBadge) {
-      const fixStatus = run.fixStatus || 'Pending';
-      el.fixStatusBadge.textContent = `Status: ${fixStatus}`;
-      el.fixStatusBadge.className = `status-badge ${
-        fixStatus === 'Approved' ? 'completed' : fixStatus === 'Rejected' ? 'failed' : 'review'
-      }`;
+  // Render Regression Result From API mock_results
+  function renderRegressionFromApi(reg) {
+    if (!reg) return;
+
+    const isRepro = reg.is_reproducible ?? reg.isReproducible;
+    const label = reg.reproducibility_label || reg.reproducibilityLabel || (isRepro ? 'REPRODUCIBLE — Vulnerable' : 'REMEDIATED — Not Reproducible');
+
+    if (el.reproducibilityBanner) {
+      el.reproducibilityBanner.className = `reproducibility-banner ${isRepro ? 'vulnerable' : 'remediated'}`;
+    }
+
+    if (el.reproStatusBadge) {
+      el.reproStatusBadge.innerHTML = isRepro
+        ? `<span>⚠️</span> ${label}`
+        : `<span>🛡️</span> ${label}`;
+    }
+
+    if (el.reproStatusText) {
+      el.reproStatusText.textContent = isRepro
+        ? 'Alert: The exploit pattern was successfully re-executed. Remediation patch failed regression check.'
+        : 'All 4 verification checks passed. Original vulnerability is remediated and no longer reproducible.';
+    }
+
+    if (el.regressionChecksList && reg.checks) {
+      el.regressionChecksList.innerHTML = '';
+      reg.checks.forEach(chk => {
+        const item = document.createElement('div');
+        const isPass = chk.status === 'PASS';
+        item.className = 'check-item';
+
+        item.innerHTML = `
+          <div class="check-info">
+            <div class="check-status-icon ${isPass ? 'pass' : 'fail'}">
+              ${isPass ? '✓' : '✕'}
+            </div>
+            <div>
+              <div class="check-name">${chk.name}</div>
+              <div class="check-desc">${chk.description}</div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">${chk.duration || ''}</span>
+            <span class="check-result-badge ${isPass ? 'pass' : 'fail'}">${chk.result_text || chk.resultText}</span>
+          </div>
+        `;
+        el.regressionChecksList.appendChild(item);
+      });
     }
   }
 
@@ -529,72 +744,17 @@
       .replace(/"/g, '&quot;');
   }
 
-  // Render Regression Result View
-  function renderRegressionResults() {
-    const run = simulator.currentRun;
-    if (!run || !run.regression) return;
-
-    const reg = run.regression;
-    const isRepro = reg.isReproducible;
-
-    if (el.reproducibilityBanner) {
-      el.reproducibilityBanner.className = `reproducibility-banner ${isRepro ? 'vulnerable' : 'remediated'}`;
-    }
-
-    if (el.reproStatusBadge) {
-      el.reproStatusBadge.innerHTML = isRepro 
-        ? `<span>⚠️</span> ${reg.reproducibilityLabel}` 
-        : `<span>🛡️</span> ${reg.reproducibilityLabel}`;
-    }
-
-    if (el.reproStatusText) {
-      el.reproStatusText.textContent = isRepro
-        ? 'Alert: The exploit pattern was successfully re-executed. Remediation patch failed regression check.'
-        : 'All 4 verification checks passed. Original vulnerability is remediated and no longer reproducible.';
-    }
-
-    if (el.regressionChecksList) {
-      el.regressionChecksList.innerHTML = '';
-      reg.checks.forEach(chk => {
-        const item = document.createElement('div');
-        const isRunning = Boolean(chk._running);
-        item.className = `check-item ${isRunning ? 'retesting' : ''}`;
-        const isPass = chk.status === 'PASS';
-
-        item.innerHTML = `
-          <div class="check-info">
-            <div class="check-status-icon ${isRunning ? 'spinner' : isPass ? 'pass' : 'fail'}">
-              ${isRunning ? '⟳' : isPass ? '✓' : '✕'}
-            </div>
-            <div>
-              <div class="check-name">${chk.name}</div>
-              <div class="check-desc">${chk.description}</div>
-            </div>
-          </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">${chk.duration || ''}</span>
-            <span class="check-result-badge ${isPass ? 'pass' : 'fail'}">${chk.resultText}</span>
-          </div>
-        `;
-        el.regressionChecksList.appendChild(item);
-      });
+  // Fetch Recent Runs List from Backend API
+  async function fetchRecentRunsFromApi() {
+    try {
+      const runs = await apiClient.listRuns();
+      state.recentRuns = runs;
+      renderDashboardRuns();
+    } catch (err) {
+      console.warn('API listRuns fetch warning:', err);
     }
   }
 
-  // Render Full Telemetry Logs
-  function renderLogs() {
-    const run = simulator.currentRun;
-    if (!run) return;
-
-    const logsText = run.logs.join('\n');
-    if (el.fullLogsViewer) el.fullLogsViewer.textContent = logsText;
-    if (el.warroomLogsViewer) {
-      el.warroomLogsViewer.textContent = logsText;
-      el.warroomLogsViewer.scrollTop = el.warroomLogsViewer.scrollHeight;
-    }
-  }
-
-  // Render Dashboard Table with Search & Filter
   function renderDashboardRuns() {
     if (!el.runsTableBody) return;
     el.runsTableBody.innerHTML = '';
@@ -603,15 +763,15 @@
     const filter = state.dashboardFilter;
 
     const filtered = state.recentRuns.filter(r => {
-      const matchSearch = !query || 
-        r.id.toLowerCase().includes(query) ||
-        r.targetLabel.toLowerCase().includes(query) ||
-        r.testName.toLowerCase().includes(query);
+      const matchSearch = !query ||
+        r.run_id.toLowerCase().includes(query) ||
+        (r.target_id && r.target_id.toLowerCase().includes(query)) ||
+        (r.test_name && r.test_name.toLowerCase().includes(query));
 
       let matchFilter = true;
-      if (filter === 'High') matchFilter = r.severity === 'High';
-      else if (filter === 'Medium') matchFilter = r.severity === 'Medium';
-      else if (filter === 'remediated') matchFilter = r.remediated === true;
+      if (filter === 'complete') matchFilter = r.status === 'complete';
+      else if (filter === 'needs_review') matchFilter = r.status === 'needs_review';
+      else if (filter === 'failed') matchFilter = r.status === 'failed';
 
       return matchSearch && matchFilter;
     });
@@ -629,23 +789,27 @@
 
     filtered.forEach(runItem => {
       const row = document.createElement('tr');
+      const isComplete = runItem.status === 'complete';
+      const isReview = runItem.status === 'needs_review';
+      const isFailed = runItem.status === 'failed';
+
       row.innerHTML = `
-        <td><strong style="color:var(--accent-cyan); font-family:var(--font-mono);">${runItem.id}</strong></td>
-        <td>${runItem.targetLabel}</td>
-        <td>${runItem.testName}</td>
+        <td><strong style="color:var(--accent-red); font-family:var(--font-mono);">${runItem.run_id}</strong></td>
+        <td>${runItem.target_id || 'Local training app'}</td>
+        <td>${runItem.test_name || runItem.test_case}</td>
         <td>
-          <span class="severity-pill ${runItem.severity.toLowerCase()}" style="font-size:10px;">
-            ${runItem.findingsCount} ${runItem.severity}
+          <span class="severity-pill ${isFailed ? 'high' : 'medium'}" style="font-size:10px;">
+            1 High
           </span>
         </td>
         <td>
-          <span class="status-badge ${runItem.remediated ? 'completed' : 'review'}">
-            ${runItem.status}
+          <span class="status-badge ${runItem.status}">
+            ${runItem.status.replace('_', ' ')}
           </span>
         </td>
-        <td style="color:var(--text-muted); font-size:12px;">${runItem.timestamp}</td>
+        <td style="color:var(--text-muted); font-size:12px;">${new Date(runItem.created_at).toLocaleTimeString()}</td>
         <td>
-          <button class="btn-ctrl btn-inspect-run" data-run-id="${runItem.id}" data-case="${runItem.testCaseId}" style="padding:4px 8px; font-size:11px;">
+          <button class="btn-ctrl btn-inspect-run" data-run-id="${runItem.run_id}" style="padding:4px 8px; font-size:11px;">
             Inspect Run
           </button>
         </td>
@@ -654,55 +818,24 @@
     });
 
     document.querySelectorAll('.btn-inspect-run').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const caseId = e.currentTarget.getAttribute('data-case');
-        simulator.startRun(caseId);
-        setNav('war-room');
-        showToast(`Loaded scenario inspection for run`, 'info');
+      btn.addEventListener('click', async (e) => {
+        const runId = e.currentTarget.getAttribute('data-run-id');
+        try {
+          const runData = await apiClient.getRun(runId);
+          state.currentRunData = runData;
+          renderRunFromApi(runData);
+          setNav('war-room');
+          showToast(`Inspecting run ${runId} from backend API`, 'info');
+        } catch (err) {
+          showToast(`Error: ${err.message}`, 'error');
+        }
       });
     });
   }
 
-  // Export Audit Report (JSON)
-  function exportAuditReport() {
-    const run = simulator.currentRun;
-    if (!run) return;
-
-    const reportObj = {
-      project: 'AEGIS-AGENT Security War Room',
-      version: '1.0-prototype',
-      generatedAt: new Date().toISOString(),
-      runId: run.id,
-      target: run.targetLabel,
-      testCase: run.testName,
-      status: run.status,
-      stages: run.stages,
-      finding: run.finding,
-      proposedFix: {
-        summary: run.proposedFix.summary,
-        filePath: run.proposedFix.filePath,
-        status: run.fixStatus
-      },
-      regressionAudit: {
-        reproducibility: run.regression.reproducibilityLabel,
-        checks: run.regression.checks
-      },
-      disclaimer: 'Front-end demo prototype. Bounded strictly to authorized local testing.'
-    };
-
-    const blob = new Blob([JSON.stringify(reportObj, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `AEGIS_Audit_${run.id}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('Audit report manifest exported successfully!', 'success');
-  }
-
   // Wire Event Listeners
   function bindEvents() {
-    // Nav bar buttons
+    // Navigation
     el.navDashboard.addEventListener('click', () => setNav('dashboard'));
     el.navWarroom.addEventListener('click', () => setNav('war-room'));
     el.navLogs.addEventListener('click', () => setNav('logs'));
@@ -722,7 +855,7 @@
       }
       try {
         localStorage.setItem('aegis_theme', theme);
-      } catch (e) {}
+      } catch (e) { }
     }
 
     if (el.themeBtnRed) {
@@ -739,7 +872,6 @@
       });
     }
 
-    // Initialize Default Theme: Red & Black
     const savedTheme = localStorage.getItem('aegis_theme') || 'red-black';
     applyTheme(savedTheme);
 
@@ -754,30 +886,6 @@
       });
     }
 
-    // Simulation controllers
-    el.btnPauseResume.addEventListener('click', () => simulator.togglePause());
-
-    el.btnResetDemo.addEventListener('click', () => {
-      simulator.reset();
-      showToast('Simulation reset to beginning', 'info');
-    });
-
-    el.btnStepDemo.addEventListener('click', () => {
-      simulator.stepForward();
-      showToast('Stepped to next stage', 'info');
-    });
-
-    // Speed buttons
-    el.speedBtns.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        el.speedBtns.forEach(b => b.classList.remove('active'));
-        e.currentTarget.classList.add('active');
-        const speed = parseFloat(e.currentTarget.getAttribute('data-speed'));
-        simulator.setSpeed(speed);
-        showToast(`Simulation speed set to ${speed}x`, 'info');
-      });
-    });
-
     // War room subtabs
     el.detailTabBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
@@ -790,17 +898,22 @@
     el.evidenceTabBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
         const evType = e.currentTarget.getAttribute('data-evidence');
-        renderEvidenceCode(evType);
+        state.activeEvidenceTab = evType;
+        if (state.currentRunData && state.currentRunData.mock_results) {
+          renderEvidenceCodeFromApi(state.currentRunData.mock_results.finding.evidence, evType);
+        }
       });
     });
 
     // Copy Buttons
     if (el.btnCopyCurl) {
       el.btnCopyCurl.addEventListener('click', () => {
-        const run = simulator.currentRun;
-        if (run && run.finding && run.finding.exploitCommand) {
-          navigator.clipboard.writeText(run.finding.exploitCommand);
-          showToast('cURL replay command copied to clipboard!', 'success');
+        if (state.currentRunData && state.currentRunData.mock_results) {
+          const cmd = state.currentRunData.mock_results.finding.exploit_command;
+          if (cmd) {
+            navigator.clipboard.writeText(cmd);
+            showToast('cURL replay command copied to clipboard!', 'success');
+          }
         }
       });
     }
@@ -820,7 +933,9 @@
         state.diffViewMode = 'unified';
         el.diffModeUnified.classList.add('active');
         el.diffModeSplit.classList.remove('active');
-        renderProposedFix();
+        if (state.currentRunData && state.currentRunData.mock_results) {
+          renderFixFromApi(state.currentRunData.mock_results.proposed_fix);
+        }
       });
     }
 
@@ -829,97 +944,99 @@
         state.diffViewMode = 'split';
         el.diffModeSplit.classList.add('active');
         el.diffModeUnified.classList.remove('active');
-        renderProposedFix();
+        if (state.currentRunData && state.currentRunData.mock_results) {
+          renderFixFromApi(state.currentRunData.mock_results.proposed_fix);
+        }
       });
     }
 
     // Finding review buttons
     el.btnReviewConfirm.addEventListener('click', () => {
-      simulator.updateReviewState('Confirmed');
-      renderReviewControlsState();
       showToast('Finding marked as Confirmed (Prototype UI update)', 'warn');
     });
 
     el.btnReviewNeedsReview.addEventListener('click', () => {
-      simulator.updateReviewState('Needs review');
-      renderReviewControlsState();
       showToast('Finding marked as Needs Review (Prototype UI update)', 'info');
     });
 
     el.btnReviewNotConfirmed.addEventListener('click', () => {
-      simulator.updateReviewState('Not confirmed');
-      renderReviewControlsState();
       showToast('Finding marked as Not Confirmed (Prototype UI update)', 'info');
     });
 
-    // Proposed fix approval buttons
-    el.btnApproveFix.addEventListener('click', () => {
-      simulator.updateFixState('Approved');
-      renderProposedFix();
-      showToast('Fix approved for demo. (No code was actually changed)', 'success');
-    });
-
-    el.btnRejectFix.addEventListener('click', () => {
-      simulator.updateFixState('Rejected');
-      renderProposedFix();
-      showToast('Fix rejected for demo. (No code was actually changed)', 'warn');
-    });
-
-    // Toggle regression reproducibility
-    el.btnToggleReproducibility.addEventListener('click', () => {
-      simulator.toggleRegressionReproducibility();
-      renderRegressionResults();
-      const status = simulator.currentRun.isReproducible ? 'VULNERABLE (Reproduced)' : 'REMEDIATED';
-      showToast(`Auditor outcome toggled: ${status}`, 'info');
-    });
-
-    // Live Step-by-Step Regression Retest
-    if (el.btnRetestSuite) {
-      el.btnRetestSuite.addEventListener('click', () => {
-        el.btnRetestSuite.disabled = true;
-        showToast('Auditor Agent replaying regression test suite...', 'info');
-        simulator.replayRegressionSuite(
-          (idx, chk) => {
-            renderRegressionResults();
-          },
-          () => {
-            el.btnRetestSuite.disabled = false;
-            renderRegressionResults();
-            showToast('Regression suite verification completed!', 'success');
+    // Fix Approval Buttons
+    if (el.btnApproveFix) {
+      el.btnApproveFix.addEventListener('click', async () => {
+        const runId = state.currentRunData ? state.currentRunData.run_id : 'RUN-1049';
+        try {
+          await apiClient.approveFix(runId);
+          if (el.fixStatusBadge) {
+            el.fixStatusBadge.className = 'sim-watermark-tag';
+            el.fixStatusBadge.style.background = 'rgba(52, 211, 153, 0.2)';
+            el.fixStatusBadge.style.color = '#34D399';
+            el.fixStatusBadge.style.borderColor = 'rgba(52, 211, 153, 0.4)';
+            el.fixStatusBadge.textContent = 'Status: Approved (Demo Only)';
           }
-        );
+          showToast(`Fix approved for local demo (${runId}). No repository files modified.`, 'success');
+        } catch (err) {
+          showToast(`Error: ${err.message}`, 'error');
+        }
       });
     }
 
-    // Dashboard Search & Filters
-    if (el.dashboardSearchInput) {
-      el.dashboardSearchInput.addEventListener('input', (e) => {
-        state.searchQuery = e.target.value;
-        renderDashboardRuns();
+    if (el.btnRejectFix) {
+      el.btnRejectFix.addEventListener('click', async () => {
+        const runId = state.currentRunData ? state.currentRunData.run_id : 'RUN-1049';
+        try {
+          await apiClient.rejectFix(runId);
+          if (el.fixStatusBadge) {
+            el.fixStatusBadge.className = 'sim-watermark-tag';
+            el.fixStatusBadge.style.background = 'rgba(230, 57, 70, 0.2)';
+            el.fixStatusBadge.style.color = '#FF6B6B';
+            el.fixStatusBadge.style.borderColor = 'rgba(230, 57, 70, 0.4)';
+            el.fixStatusBadge.textContent = 'Status: Rejected';
+          }
+          showToast(`Fix proposal rejected for ${runId}.`, 'warn');
+        } catch (err) {
+          showToast(`Error: ${err.message}`, 'error');
+        }
       });
     }
 
-    el.filterChips.forEach(chip => {
-      chip.addEventListener('click', (e) => {
-        el.filterChips.forEach(c => c.classList.remove('active'));
-        e.currentTarget.classList.add('active');
-        state.dashboardFilter = e.currentTarget.getAttribute('data-filter');
-        renderDashboardRuns();
-      });
-    });
-
-    // Export Audit Report
+    // Export Audit Report Button
     if (el.btnExportReport) {
-      el.btnExportReport.addEventListener('click', exportAuditReport);
+      el.btnExportReport.addEventListener('click', async () => {
+        const runId = state.currentRunData ? state.currentRunData.run_id : 'RUN-1049';
+        try {
+          showToast(`Generating audit report for ${runId}...`, 'info');
+          const report = await apiClient.getAuditReport(runId);
+
+          const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `AEGIS-Audit-Report-${runId}.json`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+
+          showToast(`Audit report downloaded: AEGIS-Audit-Report-${runId}.json`, 'success');
+        } catch (err) {
+          showToast(`Failed to export report: ${err.message}`, 'error');
+        }
+      });
     }
 
-    // Modal Events
+    // Modal Actions
     function openModal() {
       if (el.modalNewRun) {
         el.modalNewRun.classList.add('active');
         el.chkScopeConfirm.checked = false;
         el.btnModalStart.disabled = true;
         el.btnModalStart.style.opacity = '0.5';
+        el.btnModalStart.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Start Run`;
+        const modalBody = el.modalNewRun.querySelector('.modal-body');
+        if (modalBody) modalBody.scrollTop = 0;
       }
     }
 
@@ -948,35 +1065,78 @@
         if (radio) {
           radio.checked = true;
           state.selectedTestCaseId = radio.value;
-          const selectedCase = window.AEGIS_MOCK.testCases[radio.value];
-          if (selectedCase && el.modalTargetLabel) {
-            el.modalTargetLabel.textContent = selectedCase.targetLabel;
-          }
         }
       });
     });
 
+    const outcomeOptionCards = document.querySelectorAll('.outcome-option-card');
+    outcomeOptionCards.forEach(card => {
+      card.addEventListener('click', (e) => {
+        outcomeOptionCards.forEach(c => c.classList.remove('selected'));
+        const targetCard = e.currentTarget;
+        targetCard.classList.add('selected');
+        const radio = targetCard.querySelector('input[type="radio"]');
+        if (radio) {
+          radio.checked = true;
+        }
+      });
+    });
+
+    // Start Demo Run via POST /api/runs
     if (el.btnModalStart) {
-      el.btnModalStart.addEventListener('click', () => {
-        if (!el.chkScopeConfirm.checked) return;
-        closeModal();
-        simulator.startRun(state.selectedTestCaseId);
-        setNav('war-room');
-        showToast('Authorized local demo run initiated!', 'success');
+      el.btnModalStart.addEventListener('click', async () => {
+        if (!el.chkScopeConfirm.checked) {
+          showToast('Scope confirmation is required before launching run.', 'warn');
+          return;
+        }
+
+        // Get selected outcome radio
+        const outcomeRadio = document.querySelector('input[name="simulation-outcome"]:checked');
+        const outcome = outcomeRadio ? outcomeRadio.value : 'complete';
+
+        const targetId = 'Local training app (auth-service:v1.4.2)';
+        const testCase = state.selectedTestCaseId;
+
+        el.btnModalStart.disabled = true;
+        el.btnModalStart.textContent = 'Initiating API Run...';
+
+        try {
+          const created = await apiClient.createRun(targetId, testCase, true, outcome);
+          closeModal();
+          showToast(`Run ${created.run_id} launched via POST /api/runs!`, 'success');
+          setNav('war-room');
+          startPollingRun(created.run_id);
+        } catch (err) {
+          showToast(`API Error: ${err.message}`, 'error');
+        } finally {
+          el.btnModalStart.disabled = false;
+          el.btnModalStart.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Start Run`;
+        }
       });
     }
+
+    // Dashboard Search & Filters
+    if (el.dashboardSearchInput) {
+      el.dashboardSearchInput.addEventListener('input', (e) => {
+        state.searchQuery = e.target.value;
+        renderDashboardRuns();
+      });
+    }
+
+    el.filterChips.forEach(chip => {
+      chip.addEventListener('click', (e) => {
+        el.filterChips.forEach(c => c.classList.remove('active'));
+        e.currentTarget.classList.add('active');
+        state.dashboardFilter = e.currentTarget.getAttribute('data-filter');
+        renderDashboardRuns();
+      });
+    });
 
     // Keyboard Shortcuts
     window.addEventListener('keydown', (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
-      if (e.code === 'Space') {
-        e.preventDefault();
-        simulator.togglePause();
-      } else if (e.key === 'r' || e.key === 'R') {
-        simulator.reset();
-        showToast('Demo reset (Key: R)', 'info');
-      } else if (e.key === 'n' || e.key === 'N') {
+      if (e.key === 'n' || e.key === 'N') {
         openModal();
       } else if (e.key === 'Escape') {
         closeModal();
@@ -990,49 +1150,29 @@
         setWarRoomTab('rawlogs');
       }
     });
-
-    // Simulator Bus Subscriptions
-    simulator.subscribe((eventType, data, simState) => {
-      updateHUD(simState);
-      renderTimeline();
-      renderFindingDetails();
-      renderProposedFix();
-      renderRegressionResults();
-      renderLogs();
-
-      if (eventType === 'stopwatch_tick') {
-        if (el.simStopwatch) el.simStopwatch.textContent = formatStopwatch(simState.elapsedMs);
-      }
-
-      if (eventType === 'run_completed') {
-        showToast('Multi-agent workflow run completed successfully!', 'success');
-        const r = simState.run;
-        state.recentRuns.unshift({
-          id: r.id,
-          testCaseId: r.testCaseId,
-          testName: r.testName,
-          targetLabel: r.targetLabel,
-          findingsCount: 1,
-          severity: r.finding.severity === 'HIGH' ? 'High' : 'Medium',
-          status: 'Completed',
-          remediated: !r.isReproducible,
-          duration: `${(simState.elapsedMs / 1000).toFixed(1)}s`,
-          timestamp: 'Just now'
-        });
-        renderDashboardRuns();
-      }
-    });
   }
 
   // Application Startup
-  function init() {
+  async function init() {
     initElements();
     startClock();
     bindEvents();
-    renderDashboardRuns();
 
-    // Launch default initial run
-    simulator.startRun('input-validation');
+    // 1. Fetch historical runs list from backend API
+    await fetchRecentRunsFromApi();
+
+    // 2. Load latest run or initiate initial demo run
+    try {
+      const runs = await apiClient.listRuns();
+      if (runs && runs.length > 0) {
+        const latest = await apiClient.getRun(runs[0].run_id);
+        state.currentRunData = latest;
+        renderRunFromApi(latest);
+      }
+    } catch (err) {
+      console.warn('Initial run load from API:', err);
+    }
+
     setNav('war-room');
     setWarRoomTab('finding');
   }

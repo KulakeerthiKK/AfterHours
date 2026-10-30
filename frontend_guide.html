@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AEGIS-AGENT — Complete Frontend Architecture & UI Guide</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 14mm 14mm 14mm 14mm;
+      @bottom-right {
+        content: counter(page);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #1e293b;
+      background: #ffffff;
+      line-height: 1.55;
+      font-size: 10.5pt;
+    }
+
+    .cover {
+      page-break-after: always;
+      padding: 35px 20px 20px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 90vh;
+    }
+
+    .cover-top {
+      border-top: 4px solid #e63946;
+      padding-top: 24px;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 8.5pt;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 4px;
+      margin-bottom: 14px;
+    }
+
+    .badge-red {
+      background: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+
+    .badge-dark {
+      background: #0f172a;
+      color: #f8fafc;
+    }
+
+    .badge-blue {
+      background: #dbeafe;
+      color: #1e40af;
+      border: 1px solid #bfdbfe;
+    }
+
+    h1.cover-title {
+      font-size: 26pt;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.15;
+      margin-bottom: 12px;
+      letter-spacing: -0.02em;
+    }
+
+    h1.cover-title span {
+      color: #e63946;
+    }
+
+    .cover-subtitle {
+      font-size: 12.5pt;
+      color: #64748b;
+      line-height: 1.45;
+      margin-bottom: 24px;
+    }
+
+    .cover-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 20px;
+      background: #f8fafc;
+      padding: 18px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .meta-box h4 {
+      font-size: 8.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #64748b;
+      margin-bottom: 3px;
+    }
+
+    .meta-box p {
+      font-size: 10.5pt;
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .notice-card {
+      background: #fff1f2;
+      border-left: 4px solid #e63946;
+      padding: 12px 16px;
+      border-radius: 0 6px 6px 0;
+      margin: 20px 0;
+    }
+
+    .notice-card p {
+      font-size: 9.5pt;
+      color: #881337;
+      line-height: 1.45;
+    }
+
+    .section {
+      margin-bottom: 26px;
+    }
+
+    .page-break {
+      page-break-before: always;
+    }
+
+    h2 {
+      font-size: 15pt;
+      font-weight: 800;
+      color: #0f172a;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 6px;
+      margin-bottom: 12px;
+      letter-spacing: -0.01em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    h2 .sec-num {
+      color: #e63946;
+    }
+
+    h3 {
+      font-size: 11.5pt;
+      font-weight: 700;
+      color: #1e293b;
+      margin-top: 16px;
+      margin-bottom: 6px;
+    }
+
+    p {
+      margin-bottom: 10px;
+      color: #334155;
+    }
+
+    ul, ol {
+      margin-left: 20px;
+      margin-bottom: 12px;
+      color: #334155;
+    }
+
+    li {
+      margin-bottom: 5px;
+    }
+
+    strong {
+      color: #0f172a;
+    }
+
+    code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      font-size: 9pt;
+      background: #f1f5f9;
+      color: #b91c1c;
+      padding: 2px 4px;
+      border-radius: 4px;
+      border: 1px solid #e2e8f0;
+    }
+
+    pre {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 12px;
+      border-radius: 6px;
+      font-family: "SFMono-Regular", Consolas, monospace;
+      font-size: 8.5pt;
+      line-height: 1.4;
+      overflow-x: auto;
+      margin-bottom: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 16px 0;
+      font-size: 9pt;
+    }
+
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 7px 10px;
+      text-align: left;
+    }
+
+    th {
+      background: #f1f5f9;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+
+    .ui-mockup-frame {
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #08090d;
+      color: #f8fafc;
+      padding: 14px;
+      margin: 14px 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .mockup-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #222634;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+
+    .mockup-title {
+      font-size: 11pt;
+      font-weight: 800;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .mockup-title span {
+      color: #e63946;
+    }
+
+    .mockup-body-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 12px;
+    }
+
+    .mockup-col {
+      background: #0e1017;
+      border: 1px solid #1f2433;
+      border-radius: 6px;
+      padding: 10px;
+    }
+
+    .mockup-box-title {
+      font-size: 8pt;
+      font-weight: 800;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .theme-card {
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+    }
+
+    .theme-stealth {
+      background: #0e1017;
+      color: #f8fafc;
+      border-color: #334155;
+    }
+
+    .theme-editorial {
+      background: #f4f0e8;
+      color: #171512;
+      border-color: #d8cfc2;
+    }
+
+    .feature-badge {
+      display: inline-block;
+      font-size: 7.5pt;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-right: 4px;
+    }
+
+    .feat-active { background: #fee2e2; color: #991b1b; }
+    .feat-done { background: #dcfce7; color: #166534; }
+    .feat-warn { background: #fef3c7; color: #92400e; }
+  </style>
+</head>
+<body>
+
+  <!-- COVER PAGE -->
+  <div class="cover">
+    <div class="cover-top">
+      <div style="display:flex; gap:8px;">
+        <span class="badge badge-red">FRONTEND ARCHITECTURE SPECIFICATION</span>
+        <span class="badge badge-dark">ZERO-DEPENDENCY VANILLA JS &amp; CSS3</span>
+      </div>
+      <h1 class="cover-title">AEGIS-AGENT<br><span>Frontend Interface &amp; UX Guide</span></h1>
+      <p class="cover-subtitle">
+        A deep-dive technical manual detailing the visual design system, dual-theme architecture, interactive dashboard panels, client-side state machine, and real-time backend API synchronization.
+      </p>
+
+      <div class="notice-card">
+        <p><strong>Frontend Scope:</strong> Pure browser-native HTML5, modern CSS3 with custom properties, and modular Vanilla JavaScript. Operates with zero bundle dependencies (no React, Vue, or Webpack) for 100% offline hackathon reliability and sub-second load times.</p>
+      </div>
+
+      <div class="cover-grid">
+        <div class="meta-box">
+          <h4>Interface Paradigm</h4>
+          <p>Cybersecurity War Room (Stealth HUD)</p>
+        </div>
+        <div class="meta-box">
+          <h4>Visual Themes</h4>
+          <p>Red &amp; Black Stealth / Warm Ivory Editorial</p>
+        </div>
+        <div class="meta-box">
+          <h4>Client-Side Engine</h4>
+          <p>Async API Polling &bull; Web Audio Synthesizer</p>
+        </div>
+        <div class="meta-box">
+          <h4>Code Inspection View</h4>
+          <p>Unified &amp; Split Diff Viewer with Gutters</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="border-top: 1px solid #e2e8f0; padding-top: 12px; display:flex; justify-content:space-between; font-size:8.5pt; color:#64748b;">
+      <span>AEGIS-AGENT Frontend Engineering Document</span>
+      <span>Confidentiality: Local Demo Prototype Only</span>
+    </div>
+  </div>
+
+  <!-- SECTION 1: ARCHITECTURE & TECH STACK -->
+  <div class="section">
+    <h2><span class="sec-num">01.</span> Frontend Architectural Philosophy &amp; Tech Stack</h2>
+    
+    <p>
+      The AEGIS-AGENT front end is built strictly on <strong>zero-dependency modern web standards</strong>. Instead of shipping bloated node_modules or requiring complex build steps, the entire UI is delivered via raw HTML5, highly optimized CSS3 custom variables, and a modular JavaScript controller.
+    </p>
+
+    <h3>Why Zero Dependencies?</h3>
+    <ul>
+      <li><strong>Instantaneous Cold Starts:</strong> Loads in under 80 milliseconds directly off disk or the local Node.js server.</li>
+      <li><strong>Offline &amp; Sandbox Resilient:</strong> Immune to npm package failures, broken lockfiles, or sandboxed network restrictions during live demonstrations.</li>
+      <li><strong>No Transpilation Friction:</strong> Source code in <code>index.html</code>, <code>css/war-room.css</code>, and <code>js/app.js</code> matches what executes in the browser 1:1.</li>
+    </ul>
+
+    <h3>Frontend File Organization</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>File Path</th>
+          <th>Size / Type</th>
+          <th>Responsibility</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>index.html</code></td>
+          <td>~40 KB / Markup</td>
+          <td>Semantic DOM layout: Persistent banner, navbar, HUD, 2-column war room workbench, dashboard table, and modal dialog.</td>
+        </tr>
+        <tr>
+          <td><code>css/war-room.css</code></td>
+          <td>~48 KB / Styles</td>
+          <td>Comprehensive styling: CSS variables, dual-theme palettes, grid/flexbox layouts, custom scrollbars, animations, and diff gutters.</td>
+        </tr>
+        <tr>
+          <td><code>js/app.js</code></td>
+          <td>~39 KB / Controller</td>
+          <td>Application state machine: <code>apiClient</code> REST integration, DOM caching, 800ms stage polling, tab navigation, and event listeners.</td>
+        </tr>
+        <tr>
+          <td><code>js/simulator.js</code></td>
+          <td>~13 KB / Web Audio</td>
+          <td>Client-side Web Audio API synthesizer generating tactile auditory cues for active stage pulses, warnings, and completions.</td>
+        </tr>
+        <tr>
+          <td><code>js/mockData.js</code></td>
+          <td>~38 KB / Fixtures</td>
+          <td>Fallback client-side dataset providing deterministic templates for offline testing and initial state seeding.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- SECTION 2: DUAL THEME VISUAL DESIGN SYSTEM -->
+  <div class="section page-break">
+    <h2><span class="sec-num">02.</span> Dual Visual Themes: Stealth vs. Editorial</h2>
+
+    <p>
+      AEGIS-AGENT features a live 1-click theme switcher in the top navigation bar powered by dynamic CSS variables defined on <code>:root</code> and <code>body.theme-editorial</code>.
+    </p>
+
+    <div class="theme-card theme-stealth">
+      <div style="font-size:10pt; font-weight:800; color:#e63946; margin-bottom:4px;">
+        🔴 THEME 1: RED &amp; BLACK STEALTH OPERATIONS (DEFAULT)
+      </div>
+      <p style="color:#cbd5e1; font-size:9pt; margin-bottom:8px;">
+        Engineered for high-intensity Security Operations Centers (SOC) and war rooms. Uses deep obsidian carbon surfaces paired with glowing crimson ruby accents.
+      </p>
+      <div style="font-size:8.5pt; font-family:monospace; color:#94a3b8; line-height:1.4;">
+        --bg-primary: #08090D &bull; --bg-secondary: #0E1017 &bull; --bg-card: #141722<br>
+        --accent-red: #E63946 &bull; --accent-ruby: #FF2E44 &bull; --text-primary: #F8FAFC
+      </div>
+    </div>
+
+    <div class="theme-card theme-editorial">
+      <div style="font-size:10pt; font-weight:800; color:#a75d43; margin-bottom:4px;">
+        🏛️ THEME 2: WARM IVORY EDITORIAL ATELIER
+      </div>
+      <p style="color:#475569; font-size:9pt; margin-bottom:8px;">
+        Adapted from high-end minimalist design aesthetics. Uses warm ivory backgrounds, editorial serif headings, muted terracotta accents, and soft taupe borders.
+      </p>
+      <div style="font-size:8.5pt; font-family:monospace; color:#64748b; line-height:1.4;">
+        --bg-primary: #F4F0E8 &bull; --bg-secondary: #EBE5D8 &bull; --bg-card: #FDFBF7<br>
+        --accent-terracotta: #A75D43 &bull; --border-taupe: #D8CFC2 &bull; --text-primary: #171512
+      </div>
+    </div>
+
+    <h3>Persistent Theme State</h3>
+    <p>
+      Clicking the theme button in the header toggles <code>body.classList.toggle('theme-editorial')</code>, instantly updating every container, border, font color, and diff highlight via CSS variables without reloading the page.
+    </p>
+  </div>
+
+  <!-- SECTION 3: WAR ROOM HUD & STAGE TRACKING -->
+  <div class="section">
+    <h2><span class="sec-num">03.</span> War Room HUD &amp; Multi-Agent Workflow Tracker</h2>
+
+    <p>
+      The War Room view (<code>#view-warroom</code>) is the primary interactive cockpit. It is partitioned into a global status HUD, a left-hand stage roster, and a right-hand workbench.
+    </p>
+
+    <!-- UI WIREFRAME MOCKUP -->
+    <div class="ui-mockup-frame">
+      <div class="mockup-header">
+        <div class="mockup-title"><span>🛡️ AEGIS-AGENT</span> &bull; Security War Room (Live)</div>
+        <div style="font-size:8.5pt; color:#94a3b8;">HUD: ⏱ 00:06.4s &bull; <span style="color:#e63946;">60% Complete</span></div>
+      </div>
+      <div class="mockup-body-grid">
+        <div class="mockup-col">
+          <div class="mockup-box-title">5-Stage Live Timeline</div>
+          <div style="font-size:8pt; line-height:1.6; color:#cbd5e1;">
+            <div><span class="feature-badge feat-done">✓</span> 1. Scope Check <span style="color:#34d399;">Complete</span></div>
+            <div><span class="feature-badge feat-done">✓</span> 2. Red Agent <span style="color:#34d399;">Complete</span></div>
+            <div><span class="feature-badge feat-done">✓</span> 3. Sentinel Agent <span style="color:#34d399;">Complete</span></div>
+            <div><span class="feature-badge feat-active">●</span> 4. Fix Agent <span style="color:#e63946;">Running</span></div>
+            <div><span class="feature-badge" style="background:#334155;">5</span> 5. Auditor Agent <span style="color:#64748b;">Queued</span></div>
+          </div>
+          <div class="mockup-box-title" style="margin-top:10px;">Active Agent Roles (4)</div>
+          <div style="font-size:7.5pt; color:#94a3b8; line-height:1.5;">
+            <div>&bull; Red Agent: <span style="color:#34d399;">Done</span></div>
+            <div>&bull; Sentinel Agent: <span style="color:#34d399;">Done</span></div>
+            <div>&bull; Fix Agent: <span style="color:#e63946;">Active</span></div>
+            <div>&bull; Auditor Agent: <span style="color:#64748b;">Idle</span></div>
+          </div>
+        </div>
+
+        <div class="mockup-col">
+          <div class="mockup-box-title">Investigation &amp; Remediation Workbench (Tabs)</div>
+          <div style="display:flex; gap:6px; margin-bottom:8px; font-size:7.5pt;">
+            <span style="background:#1e293b; padding:2px 6px; border-radius:3px;">1. Finding</span>
+            <span style="background:#e63946; color:#fff; padding:2px 6px; border-radius:3px; font-weight:700;">2. Proposed Fix (Diff)</span>
+            <span style="background:#1e293b; padding:2px 6px; border-radius:3px;">3. Regression</span>
+            <span style="background:#1e293b; padding:2px 6px; border-radius:3px;">4. Logs</span>
+          </div>
+          <div style="background:#08090d; border:1px solid #222634; padding:8px; border-radius:4px; font-size:8pt; font-family:monospace;">
+            <div style="color:#94a3b8; margin-bottom:4px;">File: backend/services/auth_service.py (+6 / -4)</div>
+            <div style="color:#ef4444;">-  query = f"SELECT ... WHERE username = '{username}'"</div>
+            <div style="color:#10b981;">+  # SECURE: Prepared statement parameter binding</div>
+            <div style="color:#10b981;">+  stmt = select(User).where(User.username == bindparam("u"))</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3>1. Top HUD Components</h3>
+    <ul>
+      <li><strong>Run Identifier Tag:</strong> Displays current active run (e.g. <code>RUN-1050</code>).</li>
+      <li><strong>Laser Progress Track:</strong> Animated crimson bar reflecting synchronous pipeline progress from 0% to 100%.</li>
+      <li><strong>Digital Stopwatch:</strong> High-precision elapsed timer updated synchronously from the server's execution timestamp.</li>
+      <li><strong>Pipeline Network Map:</strong> Visual network flow highlighting active nodes (System, Red, Sentinel, Fix, Auditor).</li>
+    </ul>
+
+    <h3>2. Dynamic 5-Stage Live Timeline</h3>
+    <p>
+      Populated dynamically by <code>renderTimelineFromApi(run)</code>. Each stage displays an indicator (<code>✓</code>, <code>●</code>, <code>⚠️</code>, <code>✕</code>), the agent role tag, completion timestamp, and activity description.
+    </p>
+  </div>
+
+  <!-- SECTION 4: THE FOUR WORKBENCH DETAIL PANES -->
+  <div class="section page-break">
+    <h2><span class="sec-num">04.</span> The Four Workbench Detail Panes</h2>
+
+    <p>
+      The right-hand column houses the <strong>Investigation and Remediation Workbench</strong>, split across four dedicated tab panels accessible via click or keyboard shortcuts (<kbd>1</kbd>&ndash;<kbd>4</kbd>).
+    </p>
+
+    <h3>Pane 1: Finding &amp; Evidence View (<kbd>1</kbd>)</h3>
+    <ul>
+      <li><strong>Severity Pill &amp; CVSS:</strong> Color-coded severity badge (CRITICAL, HIGH, MEDIUM) and CVSS score.</li>
+      <li><strong>Component &amp; CWE:</strong> Target URL/parameter and official CWE identifier (e.g. CWE-89, CWE-287, CWE-22, CWE-78).</li>
+      <li><strong>Interactive Evidence Viewer:</strong> Sub-tabbed code viewer displaying:
+        <ol>
+          <li><code>HTTP Request</code>: Raw probe headers, query parameters, and test payload.</li>
+          <li><code>HTTP Response</code>: Server response headers and reflected syntax error / leaked content.</li>
+          <li><code>Raw Trace</code>: Database query failure or signature match logs.</li>
+          <li><code>Call Stack</code>: Application call stack identifying the vulnerable source code line.</li>
+        </ol>
+      </li>
+    </ul>
+
+    <h3>Pane 2: Proposed Fix (Diff) View (<kbd>2</kbd>)</h3>
+    <ul>
+      <li><strong>Technical Rationale:</strong> Clear explanatory card explaining <em>why</em> the defensive mitigation works.</li>
+      <li><strong>Allowlisted Test Validation Badge:</strong> Displays the syntax validation command executed (e.g. <code>python -m py_compile</code>) with a green <code>PASSED</code> pill.</li>
+      <li><strong>Interactive Code Diff Viewer:</strong>
+        <ul>
+          <li><strong>Unified Mode:</strong> Displays inline deletions (red) and additions (green) with line gutters and comment callouts.</li>
+          <li><strong>Split Mode:</strong> Side-by-side comparison of original vs. remediated code.</li>
+          <li><strong>Diff Stats Pill:</strong> Real-time addition/deletion counters (e.g. <code>+6 / -4</code>).</li>
+        </ul>
+      </li>
+      <li><strong>Human Approval Gate:</strong> Two action buttons (<strong>Approve for Demo</strong> / <strong>Reject Fix</strong>). Clicking either sends an API request to the backend and updates the status badge without touching repository files.</li>
+    </ul>
+
+    <h3>Pane 3: Regression Results View (<kbd>3</kbd>)</h3>
+    <ul>
+      <li><strong>Reproducibility Status Banner:</strong> Prominent banner displaying either:
+        <ul>
+          <li><code>🛡️ REMEDIATED — Not Reproducible</code> (Emerald): All 4 checks passed.</li>
+          <li><code>⚠️ REPRODUCIBLE — Secondary Bypass Detected</code> (Crimson): Vulnerability persists.</li>
+        </ul>
+      </li>
+      <li><strong>4-Check Matrix Grid:</strong> Detailed breakdown of each independent regression test, including test ID, expected status, actual status, and description.</li>
+      <li><strong>Interactive Controls:</strong> Includes a <strong>Live Replay Suite</strong> button and a <strong>Toggle Outcome</strong> test button.</li>
+    </ul>
+
+    <h3>Pane 4: Live Telemetry Logs (<kbd>4</kbd>)</h3>
+    <p>
+      Real-time streaming terminal view showing inter-agent telemetry messages, timestamps, and coordinator state transitions. Automatically scrolls to bottom on new events.
+    </p>
+  </div>
+
+  <!-- SECTION 5: DASHBOARD, MODAL & STATE ENGINE -->
+  <div class="section page-break">
+    <h2><span class="sec-num">05.</span> Dashboard Table, Modal Dialog &amp; State Engine</h2>
+
+    <h3>1. Dashboard &amp; History View (<code>#view-dashboard</code>)</h3>
+    <p>
+      Accessible via the top navigation bar. Provides a high-level operational overview:
+    </p>
+    <ul>
+      <li><strong>Metric Cards:</strong> Total local scans, high severity findings, remediations, and average TTR.</li>
+      <li><strong>Search &amp; Filter Bar:</strong> Real-time client-side text filter matching Run IDs, target names, or CWE titles, alongside filter chips (<code>All</code>, <code>Complete</code>, <code>Needs Review</code>, <code>Failed</code>).</li>
+      <li><strong>Historical Runs Table:</strong> Lists seeded and newly created runs with status pills, timestamps, and <strong>Inspect Run</strong> buttons that load that run directly into the War Room.</li>
+      <li><strong>Export Audit Report Button:</strong> One-click download of the complete sanitized JSON report (<code>AEGIS-Audit-Report-{runId}.json</code>).</li>
+    </ul>
+
+    <h3>2. "Configure New Demo Run" Modal Dialog (<code>#modal-new-run</code>)</h3>
+    <p>
+      An engineered modal dialog (<kbd>N</kbd>) designed with responsive constraints and safety bounds:
+    </p>
+    <ul>
+      <li><strong>Fixed Header &amp; Footer:</strong> Header and action buttons (Cancel / Start Run) remain permanently visible and clickable; the middle form body scrolls smoothly with a custom dark-cyber scrollbar.</li>
+      <li><strong>Locked Target Environment:</strong> Hardcoded to authorized local container fixtures with a <code>LOCKED</code> badge to prevent arbitrary external targeting.</li>
+      <li><strong>Test Case Selector (4 Cards):</strong> Selectable option cards with custom hover glows for CWE-89, CWE-287, CWE-22, and CWE-78.</li>
+      <li><strong>3-Column Simulation Outcome Cards:</strong>
+        <div style="display:flex; gap:8px; margin:8px 0; font-size:8.5pt;">
+          <span class="feature-badge feat-done">● Complete (Pass)</span>
+          <span class="feature-badge feat-warn">▲ Needs Review</span>
+          <span class="feature-badge feat-active">✕ Regression Fail</span>
+        </div>
+      </li>
+      <li><strong>Mandatory Scope Checkbox:</strong> Disables the "Start Run" button with 50% opacity until the user explicitly checks the scope authorization consent.</li>
+    </ul>
+
+    <h3>3. Client-Side State Management in <code>js/app.js</code></h3>
+    <pre><code>// Central Application State Object
+const state = {
+  activeNav: 'war-room',          // 'war-room' | 'dashboard' | 'logs' | 'about'
+  activeDetailTab: 'finding',     // 'finding' | 'fix' | 'regression' | 'rawlogs'
+  activeEvidenceTab: 'request',   // 'request' | 'response' | 'hex' | 'stack'
+  diffViewMode: 'unified',        // 'unified' | 'split'
+  dashboardFilter: 'all',         // 'all' | 'complete' | 'needs_review' | 'failed'
+  searchQuery: '',
+  selectedTestCaseId: 'input-validation',
+  currentRunData: null,           // Live run object returned from backend
+  pollTimer: null,                // Polling timeout reference (800ms intervals)
+  recentRuns: []                  // Cached historical runs list
+};</code></pre>
+
+    <h3>4. Web Audio Synthesizer in <code>js/simulator.js</code></h3>
+    <p>
+      Uses browser-native <code>window.AudioContext</code> to generate custom tactile auditory frequencies:
+    </p>
+    <ul>
+      <li><code>stage_advance</code>: 440 Hz &rarr; 880 Hz upward frequency chirp.</li>
+      <li><code>alert</code>: 320 Hz dual-pulse square wave for Sentinel warnings.</li>
+      <li><code>run_done</code>: Harmonious 3-tone chime (523 Hz &rarr; 659 Hz &rarr; 784 Hz).</li>
+    </ul>
+  </div>
+
+</body>
+</html>
+
