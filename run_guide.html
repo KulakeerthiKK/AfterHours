@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AEGIS-AGENT — Step-by-Step Execution & Operational Guide</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 10mm 12mm 10mm 12mm;
+      @bottom-right {
+        content: counter(page);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #0f172a;
+      background: #ffffff;
+      line-height: 1.35;
+      font-size: 9.5pt;
+    }
+
+    .page-break {
+      page-break-before: always;
+    }
+
+    .step-card {
+      page-break-inside: avoid;
+    }
+
+    /* Cover Page */
+    .cover {
+      padding: 20px 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 90vh;
+    }
+
+    .cover-header {
+      border-top: 5px solid #84cc16;
+      padding-top: 20px;
+    }
+
+    .badge-pill {
+      display: inline-block;
+      font-size: 7.5pt;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 9999px;
+      margin-bottom: 12px;
+    }
+
+    .badge-lime {
+      background: #ecfccb;
+      color: #3f6212;
+      border: 1px solid #bef264;
+    }
+
+    .badge-dark {
+      background: #0f172a;
+      color: #f8fafc;
+    }
+
+    .cover-title {
+      font-size: 26pt;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      color: #020708;
+      margin-bottom: 10px;
+    }
+
+    .cover-subtitle {
+      font-size: 11pt;
+      color: #475569;
+      max-width: 650px;
+      line-height: 1.4;
+      margin-bottom: 20px;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+    }
+
+    .meta-item-label {
+      font-size: 7.5pt;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .meta-item-value {
+      font-size: 9pt;
+      font-weight: 600;
+      color: #0f172a;
+      font-family: Consolas, monospace;
+    }
+
+    .notice-box {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-left: 4px solid #ef4444;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-size: 8.5pt;
+      color: #991b1b;
+      line-height: 1.4;
+    }
+
+    /* Section Styles */
+    h2 {
+      font-size: 13.5pt;
+      font-weight: 800;
+      color: #020708;
+      border-bottom: 2px solid #84cc16;
+      padding-bottom: 3px;
+      margin-top: 0;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    h3 {
+      font-size: 10pt;
+      font-weight: 700;
+      color: #1e293b;
+      margin-top: 8px;
+      margin-bottom: 4px;
+    }
+
+    p {
+      margin-bottom: 6px;
+      color: #334155;
+      font-size: 9pt;
+    }
+
+    /* Step Card */
+    .step-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-left: 3.5px solid #84cc16;
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+
+    .step-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .step-number {
+      font-size: 7.5pt;
+      font-weight: 800;
+      background: #84cc16;
+      color: #020708;
+      padding: 2px 6px;
+      border-radius: 3px;
+      text-transform: uppercase;
+      font-family: Consolas, monospace;
+    }
+
+    .step-title {
+      font-size: 9.5pt;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .step-action-tag {
+      font-size: 7.5pt;
+      font-weight: 700;
+      background: #f1f5f9;
+      color: #475569;
+      padding: 2px 6px;
+      border-radius: 3px;
+      border: 1px solid #cbd5e1;
+    }
+
+    .input-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 6px 0;
+      font-size: 8pt;
+    }
+
+    .input-table th {
+      background: #f8fafc;
+      color: #475569;
+      font-weight: 700;
+      text-align: left;
+      padding: 4px 6px;
+      border: 1px solid #e2e8f0;
+    }
+
+    .input-table td {
+      padding: 4px 6px;
+      border: 1px solid #e2e8f0;
+      color: #1e293b;
+      vertical-align: top;
+    }
+
+    .input-table tr:nth-child(even) {
+      background: #fafafa;
+    }
+
+    code, pre {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 8pt;
+    }
+
+    pre {
+      background: #090d10;
+      color: #bef264;
+      padding: 6px 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      margin: 4px 0;
+      line-height: 1.35;
+      border: 1px solid #1e293b;
+    }
+
+    .code-comment {
+      color: #64748b;
+    }
+
+    .code-hl {
+      color: #38bdf8;
+    }
+
+    .doc-footer {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 6px;
+      font-size: 7.5pt;
+      color: #64748b;
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
+    .grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- =========================================================================
+       PAGE 1: COVER
+       ========================================================================= -->
+  <div class="cover">
+    <div class="cover-header">
+      <span class="badge-pill badge-lime">Autonomous Multi-Agent Security Platform</span>
+      <span class="badge-pill badge-dark">XBOW Visual Direction &bull; Version 2.4</span>
+      <h1 class="cover-title">AEGIS-AGENT<br>Operational Runbook &amp; Step-by-Step Guide</h1>
+      <p class="cover-subtitle">
+        Complete step-by-step instructions for launching the system, configuring OpenRouter AI credentials, providing inputs, performing end-to-end security audits, and presenting to judges.
+      </p>
+
+      <div class="meta-grid">
+        <div>
+          <div class="meta-item-label">Local Runtime URL</div>
+          <div class="meta-item-value">http://localhost:3000</div>
+        </div>
+        <div>
+          <div class="meta-item-label">API Health Check</div>
+          <div class="meta-item-value">http://localhost:3000/api/health</div>
+        </div>
+        <div>
+          <div class="meta-item-label">AI Remediation Provider</div>
+          <div class="meta-item-value">OpenRouter (google/gemini-2.5-flash)</div>
+        </div>
+        <div>
+          <div class="meta-item-label">Database Persistence</div>
+          <div class="meta-item-value">PostgreSQL (Pooled) + Native SQLite</div>
+        </div>
+        <div>
+          <div class="meta-item-label">Authorized Scope Bounds</div>
+          <div class="meta-item-value">Local training app (auth-service:v1.4.2)</div>
+        </div>
+        <div>
+          <div class="meta-item-label">Execution Environment</div>
+          <div class="meta-item-value">Native Node.js v24 (Zero external npm deps)</div>
+        </div>
+      </div>
+
+      <div class="notice-box">
+        <strong>Mandatory Scope Boundary &amp; Prototype Notice:</strong><br>
+        This prototype is strictly bounded to explicitly authorized local sandbox fixtures. External public URL probing, unapproved code writes, and destructive exploits are disabled by design. All proposed code diffs require mandatory human-in-the-loop sign-off before application.
+      </div>
+    </div>
+
+    <div class="doc-footer">
+      <span>AEGIS Security War Room &bull; Hackathon Execution Runbook</span>
+      <span>Confidential &bull; Strictly for Authorized Demonstration</span>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       PAGE 2: QUICK START & SERVER LAUNCH
+       ========================================================================= -->
+  <div class="page-break"></div>
+
+  <h2>1. Quick Start &amp; Server Launch</h2>
+  <p>The AEGIS-AGENT platform runs natively on Node.js using built-in HTTP, native SQLite storage (<code>node:sqlite</code>), and native fetch. No complex build pipelines or external dependencies are required.</p>
+
+  <div class="step-card">
+    <div class="step-header">
+      <span class="step-number">Step 1.1</span>
+      <span class="step-title">Open Terminal in Project Root</span>
+      <span class="step-action-tag">PowerShell / Command Prompt</span>
+    </div>
+    <p>Navigate to the project root directory where <code>server.js</code> is located:</p>
+    <pre>cd c:\Users\dell\Desktop\AfterHours</pre>
+  </div>
+
+  <div class="step-card">
+    <div class="step-header">
+      <span class="step-number">Step 1.2</span>
+      <span class="step-title">Verify Environment Variables (.env)</span>
+      <span class="step-action-tag">Secrets Isolation</span>
+    </div>
+    <p>The server parses <code>.env</code> on boot. The key is never committed to Git (strictly ignored via <code>.gitignore</code>):</p>
+    <pre><span class="code-comment"># Environment Settings (.env)</span>
+PORT=3000
+APP_URL=http://localhost:3000
+OPENROUTER_API_KEY=sk-or-v1-****************************************
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+OPENROUTER_MODEL=google/gemini-2.5-flash
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/aegis_agent</pre>
+    <p style="font-size:8pt; color:#64748b; margin-top:2px;"><em>Security Guarantee: The server blocks any direct web request to <code>/.env</code> with a <code>403 Forbidden</code> status code.</em></p>
+  </div>
+
+  <div class="step-card">
+    <div class="step-header">
+      <span class="step-number">Step 1.3</span>
+      <span class="step-title">Start the AEGIS Backend Server</span>
+      <span class="step-action-tag">Server Startup</span>
+    </div>
+    <p>Execute the start command:</p>
+    <pre>npm start    <span class="code-comment"># OR execute: node server.js</span></pre>
+    <p>Confirm the terminal displays the startup banner:</p>
+    <pre>📦 Database connected: Native SQLite storage at aegis_records.sqlite
+🛡️  AEGIS-AGENT Security War Room running at http://localhost:3000
+📡 Local Frontend: http://localhost:3000 | 🔌 Backend API: /api/runs</pre>
+  </div>
+
+  <div class="step-card">
+    <div class="step-header">
+      <span class="step-number">Step 1.4</span>
+      <span class="step-title">Open the Web Interface</span>
+      <span class="step-action-tag">Browser Access</span>
+    </div>
+    <p>Open your browser and navigate to: <strong><a href="http://localhost:3000">http://localhost:3000</a></strong></p>
+  </div>
+
+  <!-- =========================================================================
+       PAGE 3: STEP-BY-STEP UI INPUTS & WORKFLOWS
+       ========================================================================= -->
+  <div class="page-break"></div>
+
+  <h2>2. Step-by-Step UI Inputs &amp; Execution Guide</h2>
+  <p>Follow these exact operational steps to demonstrate every capability of the platform:</p>
+
+  <div class="step-card">
+    <div class="step-header">
+      <span class="step-number">Workflow 1</span>
+      <span class="step-title">Landing Overview &amp; AST Scanner Execution</span>
+      <span class="step-action-tag">Primary Entry Point</span>
+    </div>
+    <p><strong>Where:</strong> Top Navigation &rarr; <code>Overview</code> tab (or <code>http://localhost:3000#landing</code>)</p>
+    <table class="input-table">
+      <tr>
+        <th style="width:28%;">User Action / Click</th>
+        <th style="width:34%;">Input Details</th>
+        <th style="width:38%;">Expected Visual Output</th>
+      </tr>
+      <tr>
+        <td><strong>1. Inspect Hero Console</strong></td>
+        <td>Click: <code>Attack Trace</code>, <code>AST Rules</code>, or <code>Security Memory</code></td>
+        <td>Live terminal logs update in real-time with syntax highlighting.</td>
+      </tr>
+      <tr>
+        <td><strong>2. Click "Run AST Scanner"</strong></td>
+        <td>Button on the split hero section</td>
+        <td>Toast: <em>"Triggering local AST Semgrep scan..."</em>. Transitions to Finding Detail.</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="step-card">
+    <div class="step-header">
+      <span class="step-number">Workflow 2</span>
+      <span class="step-title">Finding Detail &amp; Live OpenRouter AI Synthesis</span>
+      <span class="step-action-tag">P0 Remediation Synthesis</span>
+    </div>
+    <p><strong>Where:</strong> Top Navigation &rarr; <code>Finding Detail</code> tab (or <code>http://localhost:3000#findingdetail</code>)</p>
+    <table class="input-table">
+      <tr>
+        <th style="width:28%;">Field / Control</th>
+        <th style="width:34%;">What to Select / Input</th>
+        <th style="width:38%;">System Behavior</th>
+      </tr>
+      <tr>
+        <td><strong>Select Finding Dropdown</strong></td>
+        <td>Choose: <code>FIND-CWE89-01: SQL Injection in User Login</code></td>
+        <td>Loads sanitized HTTP proof: <code>admin' OR 1=1--</code> returning <code>HTTP 200 OK</code>. Displays risk score 9.2 / 10.0.</td>
+      </tr>
+      <tr>
+        <td><strong>OpenRouter Unified Diff</strong></td>
+        <td>Review Candidate Fix Proposal panel</td>
+        <td>Displays real unified diff synthesized by <strong>OpenRouter (google/gemini-2.5-flash)</strong> replacing concatenated SQL with parameterized queries.</td>
+      </tr>
+      <tr>
+        <td><strong>Human Approval Button</strong></td>
+        <td>Click <strong>"Approve Patch"</strong></td>
+        <td>Records approval in DB (<code>approval_records</code> table) and shows green confirmation: <em>"✓ Approved by operator."</em></td>
+      </tr>
+      <tr>
+        <td><strong>Auditor Check Button</strong></td>
+        <td>Click <strong>"Run Auditor Check"</strong></td>
+        <td>Executes independent regression matrix. Shows toast: <em>"Auditor Agent: 4/4 checks passed"</em>.</td>
+      </tr>
+      <tr>
+        <td><strong>Export SARIF / JSON</strong></td>
+        <td>Click <strong>"Export SARIF / JSON"</strong></td>
+        <td>Downloads formatted JSON artifact containing vulnerability metadata and diff hash.</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="step-card">
+    <div class="step-header">
+      <span class="step-number">Workflow 3</span>
+      <span class="step-title">Interactive Multi-Stage Attack Path Visualizer</span>
+      <span class="step-action-tag">P1 Attack Graph</span>
+    </div>
+    <p><strong>Where:</strong> Top Navigation &rarr; <code>Attack Path</code> tab (or <code>http://localhost:3000#attackpath</code>)</p>
+    <table class="input-table">
+      <tr>
+        <th style="width:28%;">Control</th>
+        <th style="width:34%;">User Action</th>
+        <th style="width:38%;">Expected Result</th>
+      </tr>
+      <tr>
+        <td><strong>Attack Path Tabs</strong></td>
+        <td>Click <code>CWE-89 SQLi</code>, <code>CWE-287 Auth Bypass</code>, or <code>CWE-22 Path Traversal</code></td>
+        <td>Renders horizontal node graph with animated SVG dashed flows linking Entry &rarr; Vulnerable File &rarr; Impact Asset.</td>
+      </tr>
+      <tr>
+        <td><strong>Graph Node Inspection</strong></td>
+        <td>Click on <code>node-vuln</code> (Vulnerable Component)</td>
+        <td>Slides out the <strong>Evidence Inspector Drawer</strong> showing AST match rule and raw server reproduction trace.</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- =========================================================================
+       PAGE 4: WAR ROOM SIMULATION & THEMES
+       ========================================================================= -->
+  <div class="page-break"></div>
+
+  <h2>3. Live War Room Synchronous Simulation</h2>
+  <p>To demonstrate the 5-stage synchronous pipeline with bounded retries, state machine validation, and Sentinel gatekeeper alerts:</p>
+
+  <div class="step-card">
+    <div class="step-header">
+      <span class="step-number">Workflow 4</span>
+      <span class="step-title">Initiating a Multi-Agent War Room Run</span>
+      <span class="step-action-tag">Live 5-Stage Orchestration</span>
+    </div>
+    <p><strong>Where:</strong> Top Navigation &rarr; <code>War Room (Live)</code> tab &rarr; Click <strong>"Start Demo Run"</strong></p>
+
+    <h3 style="margin-top:6px;">Modal Input Options:</h3>
+    <table class="input-table">
+      <tr>
+        <th style="width:28%;">Modal Input Field</th>
+        <th style="width:36%;">Recommended Option</th>
+        <th style="width:36%;">Alternative Paths</th>
+      </tr>
+      <tr>
+        <td><strong>1. Authorized Target</strong></td>
+        <td><code>Local training app (auth-service:v1.4.2)</code></td>
+        <td>Arbitrary public URLs are rejected server-side.</td>
+      </tr>
+      <tr>
+        <td><strong>2. Security Test Case</strong></td>
+        <td><code>Input validation check (CWE-89)</code></td>
+        <td><code>CWE-287</code>, <code>CWE-22</code>, or <code>CWE-78</code></td>
+      </tr>
+      <tr>
+        <td><strong>3. Simulation Outcome</strong></td>
+        <td><strong>Successful Pass (complete)</strong></td>
+        <td>&bull; <code>Sentinel Alert (needs_review)</code><br>&bull; <code>Regression Failure (failed)</code></td>
+      </tr>
+      <tr>
+        <td><strong>4. Scope Confirmation</strong></td>
+        <td>Check <strong>"I confirm scope authorization"</strong></td>
+        <td><em>Mandatory &mdash; button disabled until checked.</em></td>
+      </tr>
+      <tr>
+        <td><strong>5. Action</strong></td>
+        <td colspan="2">Click <strong>"Start Run"</strong></td>
+      </tr>
+    </table>
+
+    <h3 style="margin-top:8px;">What Happens Across the 5 Synchronous Stages:</h3>
+    <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:5px; padding:8px 10px; font-size:8pt; line-height:1.4;">
+      <p style="margin-bottom:3px;"><strong>Stage 1 (Scope Gatekeeper):</strong> Validates target against allowlist. Rejects out-of-scope targets instantly.</p>
+      <p style="margin-bottom:3px;"><strong>Stage 2 (Red Agent):</strong> Injects bounded payload <code>admin' OR 1=1--</code> against port 8080. Captures HTTP evidence.</p>
+      <p style="margin-bottom:3px;"><strong>Stage 3 (Sentinel Agent):</strong> Validates empirical response. Marks finding <code>CONFIRMED</code>. <em>(If Sentinel Alert selected, halts here for review).</em></p>
+      <p style="margin-bottom:3px;"><strong>Stage 4 (Fix Agent):</strong> Prepares minimal candidate patch in isolated memory worktree. Requires human approval.</p>
+      <p style="margin-bottom:0;"><strong>Stage 5 (Auditor Agent):</strong> Runs independent regression tests. Reports 4/4 checks passed.</p>
+    </div>
+  </div>
+
+  <div class="step-card">
+    <div class="step-header">
+      <span class="step-number">Workflow 5</span>
+      <span class="step-title">Visual Theme Customization</span>
+      <span class="step-action-tag">UI Themes</span>
+    </div>
+    <p>Toggle visual themes anytime in the top navbar right-hand group:</p>
+    <ul style="margin-left:18px; font-size:8.5pt; color:#334155; line-height:1.5;">
+      <li><strong>🟢 Cyber Lime (Default):</strong> XBOW-inspired near-black (<code>#020708</code>) with acid-lime green (<code>#A3E635</code>) highlights.</li>
+      <li><strong>🔴 Red &amp; Black:</strong> High-contrast stealth operations crimson (<code>#E63946</code>) on obsidian black.</li>
+      <li><strong>🏛️ Warm Ivory:</strong> Editorial print-inspired atelier theme with ivory paper and terracotta accents.</li>
+    </ul>
+  </div>
+
+  <!-- =========================================================================
+       PAGE 5: DIRECT REST API VERIFICATION COMMANDS
+       ========================================================================= -->
+  <div class="page-break"></div>
+
+  <h2>4. Direct REST API Testing Commands</h2>
+  <p>To inspect or test the backend API directly via terminal or automated scripts, run these PowerShell commands:</p>
+
+  <div class="step-card">
+    <div class="step-header">
+      <span class="step-number">API 1</span>
+      <span class="step-title">Health Check &amp; Provider Status</span>
+      <span class="step-action-tag">GET /api/health</span>
+    </div>
+    <pre>Invoke-RestMethod -Uri "http://localhost:3000/api/health"</pre>
+    <pre style="font-size:7.5pt; padding:4px 8px;">{ "status": "ok", "database": { "connected": true, "provider": "sqlite" }, "ai_provider": { "configured": true, "model": "google/gemini-2.5-flash" } }</pre>
+  </div>
+
+  <div class="step-card">
+    <div class="step-header">
+      <span class="step-number">API 2</span>
+      <span class="step-title">Trigger OpenRouter AI Patch Synthesis</span>
+      <span class="step-action-tag">POST /api/findings/:id/propose-fix</span>
+    </div>
+    <pre>Invoke-RestMethod -Uri "http://localhost:3000/api/findings/FIND-CWE89-01/propose-fix" `
+  -Method Post -ContentType "application/json" -Body '{"scope_confirmed":true}'</pre>
+    <pre style="font-size:7.5pt; padding:4px 8px;">{ "provider": "OpenRouter (google/gemini-2.5-flash)", "status": "PROPOSED", "changed_files": ["backend/services/auth_service.py"] }</pre>
+  </div>
+
+  <div class="step-card">
+    <div class="step-header">
+      <span class="step-number">API 3</span>
+      <span class="step-title">Record Human Governance Decision</span>
+      <span class="step-action-tag">POST /api/proposals/:id/decision</span>
+    </div>
+    <pre>Invoke-RestMethod -Uri "http://localhost:3000/api/proposals/PROP-FIND-CWE89-01/decision" `
+  -Method Post -ContentType "application/json" -Body '{"decision":"approved","reason":"Operator reviewed diff"}'</pre>
+    <pre style="font-size:7.5pt; padding:4px 8px;">{ "status": "recorded", "proposal_id": "PROP-FIND-CWE89-01", "decision": "approved" }</pre>
+  </div>
+
+  <div class="step-card">
+    <div class="step-header">
+      <span class="step-number">API 4</span>
+      <span class="step-title">Execute Independent Regression Suite</span>
+      <span class="step-action-tag">POST /api/findings/:id/regression</span>
+    </div>
+    <pre>Invoke-RestMethod -Uri "http://localhost:3000/api/findings/FIND-CWE89-01/regression" `
+  -Method Post -ContentType "application/json" -Body '{"scope_confirmed":true}'</pre>
+    <pre style="font-size:7.5pt; padding:4px 8px;">{ "status": "passed", "test_command": "pytest tests/security/test_login_regression.py", "total": 4, "passed": 4 }</pre>
+  </div>
+
+  <!-- =========================================================================
+       PAGE 6: HOW TO PRESENT TO JUDGES
+       ========================================================================= -->
+  <div class="page-break"></div>
+
+  <h2>5. How to Present to Judges (3-Minute Script)</h2>
+  <p>Deliver these concise, high-impact points to highlight why AEGIS-AGENT stands out:</p>
+
+  <div class="step-card" style="border-left-color:#38bdf8; padding:7px 10px; margin-bottom:6px;">
+    <div class="step-header">
+      <span class="step-number" style="background:#38bdf8;">Talking Point 1</span>
+      <span class="step-title">The Real Problem with AI in Cybersecurity</span>
+    </div>
+    <p style="margin-bottom:0;"><em>"Most AI cybersecurity tools hallucinate targets, generate broken exploit code, and attempt to write unverified patches directly into production repositories. AEGIS-AGENT solves this through a rigorous <strong>4-Stage Gatekeeper Model</strong>."</em></p>
+  </div>
+
+  <div class="step-card" style="border-left-color:#84cc16; padding:7px 10px; margin-bottom:6px;">
+    <div class="step-header">
+      <span class="step-number">Talking Point 2</span>
+      <span class="step-title">Empirical Evidence &amp; Zero Unchecked Scans</span>
+    </div>
+    <p style="margin-bottom:0;"><em>"Notice how our <strong>Sentinel Agent</strong> refuses to forward scanner alerts to the Fix Agent until it proves empirical reproduction via local HTTP boundary probes. Speculative scanner noise is filtered out before it ever wastes developer time."</em></p>
+  </div>
+
+  <div class="step-card" style="border-left-color:#a855f7; padding:7px 10px; margin-bottom:6px;">
+    <div class="step-header">
+      <span class="step-number" style="background:#a855f7; color:#ffffff;">Talking Point 3</span>
+      <span class="step-title">Isolated Worktree Diffs &amp; Mandatory Human Approval</span>
+    </div>
+    <p style="margin-bottom:0;"><em>"Our <strong>Fix Agent</strong> (powered by OpenRouter Gemini 2.5 Flash) proposes minimal unified diffs in temporary isolated worktrees. It never executes shell commands and never modifies user files without explicit human sign-off."</em></p>
+  </div>
+
+  <div class="step-card" style="border-left-color:#10b981; padding:7px 10px; margin-bottom:6px;">
+    <div class="step-header">
+      <span class="step-number" style="background:#10b981; color:#ffffff;">Talking Point 4</span>
+      <span class="step-title">Independent Auditor &amp; Dual Verification</span>
+    </div>
+    <p style="margin-bottom:0;"><em>"Finally, our <strong>Auditor Agent</strong> doesn't just ask the AI if the code is safe. It independently compiles and executes allowlisted test suites to prove that: (1) the exploit breaker payload is blocked, and (2) existing authenticated logins continue to work normally."</em></p>
+  </div>
+
+  <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px 12px; margin-top:8px;">
+    <h3 style="margin-top:0; font-size:9.5pt;">Demonstration Acceptance Checklist:</h3>
+    <ul style="margin-left:18px; font-size:8pt; color:#334155; line-height:1.5;">
+      <li>&check; <strong>Local Server Running:</strong> Tested and live at <code>http://localhost:3000</code>.</li>
+      <li>&check; <strong>OpenRouter API Connected:</strong> Real patch synthesis via <code>google/gemini-2.5-flash</code>.</li>
+      <li>&check; <strong>Secrets Fully Isolated:</strong> <code>.env</code> ignored by Git; HTTP access returns <code>403 Forbidden</code>.</li>
+      <li>&check; <strong>Database Persistence Active:</strong> All runs, findings, and approvals persisted in SQLite.</li>
+      <li>&check; <strong>Visual Design Complete:</strong> Dynamic XBOW dark-cyber design with 3 switchable themes.</li>
+    </ul>
+  </div>
+
+  <div class="doc-footer">
+    <span>AEGIS-AGENT &bull; Autonomous Security Operations Platform</span>
+    <span>Generated 30 October 2026 &bull; Ready for Demonstration</span>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,50 @@
+name: AEGIS Security Guardian CI/CD Gate
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  aegis-security-scan:
+    name: AEGIS AST & Secret Guardian
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js Runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Validate Backend & Agent Syntax
+        run: |
+          node -c server.js
+          node -c backend/scannerAdapter.js
+          node -c backend/sentinelAgent.js
+          node -c backend/fixAgent.js
+          node -c backend/auditorAgent.js
+          node -c backend/coordinator.js
+
+      - name: Execute AEGIS AST Scanner (Report-Only Mode)
+        run: |
+          node -e '
+            const { runLocalScanner } = require("./backend/scannerAdapter");
+            const result = runLocalScanner({ target_id: "Local training app (auth-service:v1.4.2)" });
+            const fs = require("fs");
+            fs.writeFileSync("aegis-findings.json", JSON.stringify(result, null, 2));
+            console.log(`AEGIS Scan Completed: ${result.total_findings} findings detected.`);
+          '
+
+      - name: Archive Security Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: aegis-security-findings
+          path: aegis-findings.json
+          retention-days: 7
+
