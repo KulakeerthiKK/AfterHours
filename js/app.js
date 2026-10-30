@@ -1,17 +1,21 @@
-// AEGIS-AGENT Frontend Application Controller
-// Orchestrates War Room views, modal interactions, diff rendering, and simulation telemetry.
+// AEGIS-AGENT Advanced Dynamic Frontend Controller
+// Coordinates real-time stopwatch, dynamic progress HUD, audio synth cues, split/unified diffs,
+// interactive regression replay suite, CVSS breakdowns, and clipboard actions.
 
 (function () {
   'use strict';
 
-  // Instantiate simulator
+  // Simulator Instance
   const simulator = new window.AegisWorkflowSimulator();
 
-  // App State
+  // Application State
   const state = {
-    activeNav: 'war-room', // 'dashboard', 'war-room', 'logs', 'about'
-    activeDetailTab: 'finding', // 'finding', 'fix', 'regression', 'rawlogs'
-    activeEvidenceTab: 'request', // 'request', 'response', 'logs', 'stack'
+    activeNav: 'war-room',
+    activeDetailTab: 'finding',
+    activeEvidenceTab: 'request',
+    diffViewMode: 'unified', // 'unified' or 'split'
+    dashboardFilter: 'all',
+    searchQuery: '',
     recentRuns: [...window.AEGIS_MOCK.recentRuns],
     selectedTestCaseId: 'input-validation'
   };
@@ -20,17 +24,32 @@
   const el = {};
 
   function initElements() {
-    // Nav elements
+    // Navigation
     el.navDashboard = document.getElementById('nav-dashboard');
     el.navWarroom = document.getElementById('nav-warroom');
     el.navLogs = document.getElementById('nav-logs');
     el.navAbout = document.getElementById('nav-about');
+    el.brandHomeBtn = document.getElementById('brand-home-btn');
+
     el.viewDashboard = document.getElementById('view-dashboard');
     el.viewWarroom = document.getElementById('view-warroom');
     el.viewLogs = document.getElementById('view-logs');
     el.viewAbout = document.getElementById('view-about');
 
-    // Controls
+    // Controls & HUD
+    el.progressBarFill = document.getElementById('progress-bar-fill');
+    el.simRunTag = document.getElementById('sim-run-tag');
+    el.simStopwatch = document.getElementById('sim-stopwatch');
+    el.simStateBadge = document.getElementById('sim-state-badge');
+    el.simProgressPct = document.getElementById('sim-progress-pct');
+    el.activeTargetLabel = document.getElementById('active-target-label');
+    el.sysClock = document.getElementById('sys-clock');
+    el.btnToggleSound = document.getElementById('btn-toggle-sound');
+    el.soundIcon = document.getElementById('sound-icon');
+    el.soundLabel = document.getElementById('sound-label');
+    el.themeBtnRed = document.getElementById('theme-btn-red');
+    el.themeBtnEditorial = document.getElementById('theme-btn-editorial');
+
     el.btnNewRunHeader = document.getElementById('btn-new-run-header');
     el.btnStartDemoHero = document.getElementById('btn-start-demo-hero');
     el.btnPauseResume = document.getElementById('btn-pause-resume');
@@ -38,26 +57,36 @@
     el.btnStepDemo = document.getElementById('btn-step-demo');
     el.speedBtns = document.querySelectorAll('.speed-btn');
 
-    // Top status pill
-    el.simRunTag = document.getElementById('sim-run-tag');
-    el.simStateBadge = document.getElementById('sim-state-badge');
-    el.sysClock = document.getElementById('sys-clock');
+    // Multi-Agent Pipeline Network Nodes
+    el.netNodeSystem = document.getElementById('net-node-system');
+    el.netNodeRed = document.getElementById('net-node-red');
+    el.netNodeSentinel = document.getElementById('net-node-sentinel');
+    el.netNodeFix = document.getElementById('net-node-fix');
+    el.netNodeAuditor = document.getElementById('net-node-auditor');
+    el.netArrows = [
+      document.getElementById('net-arrow-1'),
+      document.getElementById('net-arrow-2'),
+      document.getElementById('net-arrow-3'),
+      document.getElementById('net-arrow-4')
+    ];
+    el.netActiveStepLabel = document.getElementById('net-active-step-label');
+    el.netLatencyTag = document.getElementById('net-latency-tag');
 
-    // Timeline container
+    // Timeline and Agent Cards
     el.timelineStagesList = document.getElementById('timeline-stages-list');
     el.agentPillRed = document.getElementById('agent-pill-red');
     el.agentPillSentinel = document.getElementById('agent-pill-sentinel');
     el.agentPillFix = document.getElementById('agent-pill-fix');
     el.agentPillAuditor = document.getElementById('agent-pill-auditor');
 
-    // Detail tabs
+    // Detail Tabs
     el.detailTabBtns = document.querySelectorAll('.detail-tab-btn');
     el.paneFinding = document.getElementById('pane-finding');
     el.paneFix = document.getElementById('pane-fix');
     el.paneRegression = document.getElementById('pane-regression');
     el.paneRawLogs = document.getElementById('pane-rawlogs');
 
-    // Finding pane elements
+    // Finding Elements
     el.findingTitle = document.getElementById('finding-title');
     el.findingSeverity = document.getElementById('finding-severity');
     el.findingCvss = document.getElementById('finding-cvss');
@@ -65,50 +94,60 @@
     el.findingComponent = document.getElementById('finding-component');
     el.findingCategory = document.getElementById('finding-category');
     el.findingExplanation = document.getElementById('finding-explanation');
+    el.cvssVectorGrid = document.getElementById('cvss-vector-grid');
+    el.btnCopyCurl = document.getElementById('btn-copy-curl');
+    el.btnCopyEvidence = document.getElementById('btn-copy-evidence');
     el.evidenceCodeViewer = document.getElementById('evidence-code-viewer');
     el.evidenceTabBtns = document.querySelectorAll('.evidence-tab-btn');
+
+    // Review Controls
     el.reviewStateDisplay = document.getElementById('review-state-display');
     el.btnReviewConfirm = document.getElementById('btn-review-confirm');
     el.btnReviewNeedsReview = document.getElementById('btn-review-needsreview');
     el.btnReviewNotConfirmed = document.getElementById('btn-review-notconfirmed');
 
-    // Proposed Fix pane elements
+    // Proposed Fix Elements
     el.fixSummaryText = document.getElementById('fix-summary-text');
     el.diffFilePath = document.getElementById('diff-file-path');
     el.diffStatsAdd = document.getElementById('diff-stats-add');
     el.diffStatsDel = document.getElementById('diff-stats-del');
     el.diffCodeBody = document.getElementById('diff-code-body');
+    el.diffModeUnified = document.getElementById('diff-mode-unified');
+    el.diffModeSplit = document.getElementById('diff-mode-split');
     el.btnApproveFix = document.getElementById('btn-approve-fix');
     el.btnRejectFix = document.getElementById('btn-reject-fix');
     el.fixStatusBadge = document.getElementById('fix-status-badge');
 
-    // Regression pane elements
+    // Regression Elements
     el.reproducibilityBanner = document.getElementById('reproducibility-banner');
     el.reproStatusBadge = document.getElementById('repro-status-badge');
     el.reproStatusText = document.getElementById('repro-status-text');
     el.regressionChecksList = document.getElementById('regression-checks-list');
     el.btnToggleReproducibility = document.getElementById('btn-toggle-reproducibility');
+    el.btnRetestSuite = document.getElementById('btn-retest-suite');
 
-    // Logs pane elements
+    // Logs & Dashboard
     el.fullLogsViewer = document.getElementById('full-logs-viewer');
     el.warroomLogsViewer = document.getElementById('warroom-logs-viewer');
+    el.runsTableBody = document.getElementById('runs-table-body');
+    el.dashboardSearchInput = document.getElementById('dashboard-search-input');
+    el.filterChips = document.querySelectorAll('.filter-chip');
+    el.btnExportReport = document.getElementById('btn-export-report');
 
-    // Modal elements
+    // Modal
     el.modalNewRun = document.getElementById('modal-new-run');
+    el.modalTargetLabel = document.getElementById('modal-target-label');
     el.btnModalClose = document.getElementById('btn-modal-close');
     el.btnModalCancel = document.getElementById('btn-modal-cancel');
     el.btnModalStart = document.getElementById('btn-modal-start');
     el.chkScopeConfirm = document.getElementById('chk-scope-confirm');
     el.testcaseOptionCards = document.querySelectorAll('.testcase-option-card');
 
-    // Dashboard runs table
-    el.runsTableBody = document.getElementById('runs-table-body');
-
-    // Toast container
+    // Toast Container
     el.toastContainer = document.getElementById('toast-container');
   }
 
-  // Toast Notification Helper
+  // Toast Notification
   function showToast(message, type = 'info') {
     if (!el.toastContainer) return;
     const toast = document.createElement('div');
@@ -128,6 +167,17 @@
     }, 3200);
   }
 
+  // Stopwatch Formatter (mm:ss.s)
+  function formatStopwatch(ms) {
+    const totalSecs = Math.floor(ms / 1000);
+    const tenths = Math.floor((ms % 1000) / 100);
+    const mins = Math.floor(totalSecs / 60);
+    const secs = totalSecs % 60;
+    const mStr = String(mins).padStart(2, '0');
+    const sStr = String(secs).padStart(2, '0');
+    return `⏱ ${mStr}:${sStr}.${tenths}s`;
+  }
+
   // System Clock
   function startClock() {
     function update() {
@@ -140,22 +190,18 @@
     setInterval(update, 1000);
   }
 
-  // Switch Main View
+  // Main View Navigation
   function setNav(targetNav) {
     state.activeNav = targetNav;
 
-    // Update Nav buttons
     [el.navDashboard, el.navWarroom, el.navLogs, el.navAbout].forEach(btn => {
       if (!btn) return;
-      const isTarget = btn.getAttribute('data-nav') === targetNav;
-      btn.classList.toggle('active', isTarget);
+      btn.classList.toggle('active', btn.getAttribute('data-nav') === targetNav);
     });
 
-    // Update View Sections
     [el.viewDashboard, el.viewWarroom, el.viewLogs, el.viewAbout].forEach(view => {
       if (!view) return;
-      const isTarget = view.id === `view-${targetNav}`;
-      view.classList.toggle('active', isTarget);
+      view.classList.toggle('active', view.id === `view-${targetNav}`);
     });
 
     if (targetNav === 'dashboard') {
@@ -163,13 +209,12 @@
     }
   }
 
-  // Switch War Room Sub-tab
+  // War Room Sub-tab Navigation
   function setWarRoomTab(tabName) {
     state.activeDetailTab = tabName;
 
     el.detailTabBtns.forEach(btn => {
-      const isTarget = btn.getAttribute('data-tab') === tabName;
-      btn.classList.toggle('active', isTarget);
+      btn.classList.toggle('active', btn.getAttribute('data-tab') === tabName);
     });
 
     const panes = {
@@ -184,6 +229,64 @@
         panes[key].classList.toggle('active', key === tabName);
       }
     });
+  }
+
+  // Update Dynamic HUD & Agent Pipeline Network Graph
+  function updateHUD(simState) {
+    const run = simState.run;
+    if (!run) return;
+
+    if (el.simRunTag) el.simRunTag.textContent = run.id;
+    if (el.activeTargetLabel) el.activeTargetLabel.textContent = run.targetLabel;
+    if (el.simStopwatch) el.simStopwatch.textContent = formatStopwatch(simState.elapsedMs);
+
+    // Progress Bar Fill
+    const pct = simState.progressPct;
+    if (el.progressBarFill) el.progressBarFill.style.width = pct + '%';
+    if (el.simProgressPct) el.simProgressPct.textContent = `${pct}% Complete`;
+
+    // State Badge
+    if (el.simStateBadge) {
+      el.simStateBadge.className = `sim-state-badge ${run.status}`;
+      el.simStateBadge.innerHTML = simState.isPaused 
+        ? '<span>⏸</span> PAUSED' 
+        : run.status === 'completed' 
+          ? '<span>✓</span> COMPLETED' 
+          : '<span>●</span> SIMULATING';
+    }
+
+    if (el.btnPauseResume) {
+      el.btnPauseResume.innerHTML = simState.isPaused
+        ? '<span>▶</span> Resume Demo'
+        : '<span>⏸</span> Pause Demo';
+    }
+
+    // Update Multi-Agent Graph Network Nodes
+    const stageIdx = simulator.currentStageIndex;
+    const nodes = [el.netNodeSystem, el.netNodeRed, el.netNodeSentinel, el.netNodeFix, el.netNodeAuditor];
+
+    nodes.forEach((node, i) => {
+      if (!node) return;
+      const isCurrent = (i === stageIdx && run.status === 'running');
+      const isDone = (i < stageIdx || run.status === 'completed');
+      node.classList.toggle('active-node', isCurrent || isDone);
+    });
+
+    if (el.netArrows) {
+      el.netArrows.forEach((arr, i) => {
+        if (!arr) return;
+        arr.classList.toggle('flow-active', i === stageIdx - 1);
+      });
+    }
+
+    if (el.netActiveStepLabel) {
+      const stage = run.stages[Math.min(stageIdx, run.stages.length - 1)];
+      el.netActiveStepLabel.textContent = stage ? `${stage.name} (${stage.agent})` : 'Workflow Completed';
+    }
+
+    if (el.netLatencyTag && run.latencyImpact) {
+      el.netLatencyTag.textContent = `Latency: ${run.latencyImpact}`;
+    }
   }
 
   // Render 5 Stages Timeline
@@ -223,7 +326,6 @@
       el.timelineStagesList.appendChild(item);
     });
 
-    // Update Agent status pills
     updateAgentPills(run);
   }
 
@@ -231,7 +333,6 @@
   function updateAgentPills(run) {
     if (!run) return;
 
-    // Reset pills
     const resetPill = (elem) => {
       if (!elem) return;
       elem.className = 'agent-activity-pill idle';
@@ -242,9 +343,6 @@
     resetPill(el.agentPillSentinel);
     resetPill(el.agentPillFix);
     resetPill(el.agentPillAuditor);
-
-    // Map stages to agents
-    const currentStage = run.stages[simulator.currentStageIndex];
 
     run.stages.forEach((stage) => {
       let pillElem = null;
@@ -265,7 +363,7 @@
     });
   }
 
-  // Render Finding Details
+  // Render Finding Details with CVSS Breakdown
   function renderFindingDetails() {
     const run = simulator.currentRun;
     if (!run || !run.finding) return;
@@ -276,38 +374,52 @@
       el.findingSeverity.textContent = f.severity + ' SEVERITY';
       el.findingSeverity.className = `severity-pill ${f.severity.toLowerCase()}`;
     }
-    if (el.findingCvss) el.findingCvss.textContent = f.cvss;
+    if (el.findingCvss) el.findingCvss.textContent = `${f.cvss} (${f.severity})`;
     if (el.findingCwe) el.findingCwe.textContent = f.cwe;
     if (el.findingComponent) el.findingComponent.textContent = f.affectedComponent;
     if (el.findingCategory) el.findingCategory.textContent = f.category;
     if (el.findingExplanation) el.findingExplanation.textContent = f.shortExplanation;
 
+    // Render CVSS Vector Chips
+    if (el.cvssVectorGrid && run.cvssBreakdown) {
+      const b = run.cvssBreakdown;
+      el.cvssVectorGrid.innerHTML = `
+        <div class="cvss-chip"><strong>AV:</strong> ${b.av}</div>
+        <div class="cvss-chip"><strong>AC:</strong> ${b.ac}</div>
+        <div class="cvss-chip"><strong>PR:</strong> ${b.pr}</div>
+        <div class="cvss-chip"><strong>UI:</strong> ${b.ui}</div>
+        <div class="cvss-chip"><strong>Scope:</strong> ${b.scope}</div>
+        <div class="cvss-chip"><strong>Conf:</strong> ${b.conf}</div>
+        <div class="cvss-chip"><strong>Integ:</strong> ${b.integ}</div>
+      `;
+    }
+
     renderEvidenceCode(state.activeEvidenceTab);
     renderReviewControlsState();
   }
 
-  // Render Evidence Code Viewer
+  // Render Evidence Subtab
   function renderEvidenceCode(tabType) {
     state.activeEvidenceTab = tabType;
     const run = simulator.currentRun;
     if (!run || !run.finding || !el.evidenceCodeViewer) return;
 
     el.evidenceTabBtns.forEach(btn => {
-      const isTarget = btn.getAttribute('data-evidence') === tabType;
-      btn.classList.toggle('active', isTarget);
+      btn.classList.toggle('active', btn.getAttribute('data-evidence') === tabType);
     });
 
     const ev = run.finding.evidence;
     let text = '';
     if (tabType === 'request') text = ev.httpRequest;
     else if (tabType === 'response') text = ev.httpResponse;
+    else if (tabType === 'hex') text = ev.hexView || 'Hex view not available.';
     else if (tabType === 'logs') text = ev.rawLogs;
     else if (tabType === 'stack') text = ev.callStack;
 
     el.evidenceCodeViewer.textContent = text || 'No evidence captured for this category.';
   }
 
-  // Render Prototype Review Controls State
+  // Render Prototype Review State
   function renderReviewControlsState() {
     const run = simulator.currentRun;
     if (!run) return;
@@ -335,7 +447,7 @@
     });
   }
 
-  // Render Proposed Fix View & Diff
+  // Render Proposed Fix View (Unified and Split)
   function renderProposedFix() {
     const run = simulator.currentRun;
     if (!run || !run.proposedFix) return;
@@ -346,8 +458,11 @@
     if (el.diffStatsAdd) el.diffStatsAdd.textContent = `+${fix.diffStats.additions}`;
     if (el.diffStatsDel) el.diffStatsDel.textContent = `-${fix.diffStats.deletions}`;
 
-    if (el.diffCodeBody) {
-      el.diffCodeBody.innerHTML = '';
+    if (!el.diffCodeBody) return;
+    el.diffCodeBody.innerHTML = '';
+
+    if (state.diffViewMode === 'unified') {
+      // Unified Diff View
       fix.diffLines.forEach(line => {
         const row = document.createElement('div');
         row.className = `diff-line ${line.type}`;
@@ -355,18 +470,47 @@
         const oldGutter = line.oldLine !== null ? line.oldLine : '';
         const newGutter = line.newLine !== null ? line.newLine : '';
         const marker = line.type === 'addition' ? '+' : line.type === 'deletion' ? '-' : ' ';
+        const commentBadge = line.comment 
+          ? `<span class="diff-comment-callout">💡 ${escapeHtml(line.comment)}</span>` 
+          : '';
 
         row.innerHTML = `
           <div class="diff-gutter">${oldGutter}</div>
           <div class="diff-gutter">${newGutter}</div>
           <div class="diff-marker">${marker}</div>
-          <div class="diff-text">${escapeHtml(line.text)}</div>
+          <div class="diff-text">${escapeHtml(line.text)}${commentBadge}</div>
         `;
         el.diffCodeBody.appendChild(row);
       });
+    } else {
+      // Side-by-Side Split Diff View
+      const oldLines = fix.diffLines.filter(l => l.type === 'context' || l.type === 'deletion');
+      const newLines = fix.diffLines.filter(l => l.type === 'context' || l.type === 'addition');
+      const maxRows = Math.max(oldLines.length, newLines.length);
+
+      for (let i = 0; i < maxRows; i++) {
+        const oL = oldLines[i];
+        const nL = newLines[i];
+        const row = document.createElement('div');
+        row.className = 'split-diff-row';
+
+        const leftHtml = oL ? `
+          <div class="split-diff-half ${oL.type === 'deletion' ? 'del' : ''}">
+            <div class="diff-gutter">${oL.oldLine || ''}</div>
+            <div class="diff-text">${escapeHtml(oL.text)}</div>
+          </div>` : '<div class="split-diff-half"></div>';
+
+        const rightHtml = nL ? `
+          <div class="split-diff-half ${nL.type === 'addition' ? 'add' : ''}">
+            <div class="diff-gutter">${nL.newLine || ''}</div>
+            <div class="diff-text">${escapeHtml(nL.text)}</div>
+          </div>` : '<div class="split-diff-half"></div>';
+
+        row.innerHTML = leftHtml + rightHtml;
+        el.diffCodeBody.appendChild(row);
+      }
     }
 
-    // Render approval status
     if (el.fixStatusBadge) {
       const fixStatus = run.fixStatus || 'Pending';
       el.fixStatusBadge.textContent = `Status: ${fixStatus}`;
@@ -413,18 +557,22 @@
       el.regressionChecksList.innerHTML = '';
       reg.checks.forEach(chk => {
         const item = document.createElement('div');
-        item.className = 'check-item';
+        const isRunning = Boolean(chk._running);
+        item.className = `check-item ${isRunning ? 'retesting' : ''}`;
         const isPass = chk.status === 'PASS';
 
         item.innerHTML = `
           <div class="check-info">
-            <div class="check-status-icon ${isPass ? 'pass' : 'fail'}">${isPass ? '✓' : '✕'}</div>
+            <div class="check-status-icon ${isRunning ? 'spinner' : isPass ? 'pass' : 'fail'}">
+              ${isRunning ? '⟳' : isPass ? '✓' : '✕'}
+            </div>
             <div>
               <div class="check-name">${chk.name}</div>
               <div class="check-desc">${chk.description}</div>
             </div>
           </div>
-          <div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">${chk.duration || ''}</span>
             <span class="check-result-badge ${isPass ? 'pass' : 'fail'}">${chk.resultText}</span>
           </div>
         `;
@@ -446,12 +594,40 @@
     }
   }
 
-  // Render Dashboard Recent Runs Table
+  // Render Dashboard Table with Search & Filter
   function renderDashboardRuns() {
     if (!el.runsTableBody) return;
     el.runsTableBody.innerHTML = '';
 
-    state.recentRuns.forEach(runItem => {
+    const query = state.searchQuery.toLowerCase().trim();
+    const filter = state.dashboardFilter;
+
+    const filtered = state.recentRuns.filter(r => {
+      const matchSearch = !query || 
+        r.id.toLowerCase().includes(query) ||
+        r.targetLabel.toLowerCase().includes(query) ||
+        r.testName.toLowerCase().includes(query);
+
+      let matchFilter = true;
+      if (filter === 'High') matchFilter = r.severity === 'High';
+      else if (filter === 'Medium') matchFilter = r.severity === 'Medium';
+      else if (filter === 'remediated') matchFilter = r.remediated === true;
+
+      return matchSearch && matchFilter;
+    });
+
+    if (filtered.length === 0) {
+      el.runsTableBody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align:center; padding:24px; color:var(--text-muted);">
+            No simulation runs matched the active filter criteria.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    filtered.forEach(runItem => {
       const row = document.createElement('tr');
       row.innerHTML = `
         <td><strong style="color:var(--accent-cyan); font-family:var(--font-mono);">${runItem.id}</strong></td>
@@ -477,38 +653,51 @@
       el.runsTableBody.appendChild(row);
     });
 
-    // Wire inspect buttons
     document.querySelectorAll('.btn-inspect-run').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const caseId = e.currentTarget.getAttribute('data-case');
         simulator.startRun(caseId);
         setNav('war-room');
-        showToast(`Loaded inspection for run`, 'info');
+        showToast(`Loaded scenario inspection for run`, 'info');
       });
     });
   }
 
-  // Update Simulation Status Bar
-  function updateControlBar(stateObj) {
-    const run = stateObj.run;
+  // Export Audit Report (JSON)
+  function exportAuditReport() {
+    const run = simulator.currentRun;
     if (!run) return;
 
-    if (el.simRunTag) el.simRunTag.textContent = run.id;
+    const reportObj = {
+      project: 'AEGIS-AGENT Security War Room',
+      version: '1.0-prototype',
+      generatedAt: new Date().toISOString(),
+      runId: run.id,
+      target: run.targetLabel,
+      testCase: run.testName,
+      status: run.status,
+      stages: run.stages,
+      finding: run.finding,
+      proposedFix: {
+        summary: run.proposedFix.summary,
+        filePath: run.proposedFix.filePath,
+        status: run.fixStatus
+      },
+      regressionAudit: {
+        reproducibility: run.regression.reproducibilityLabel,
+        checks: run.regression.checks
+      },
+      disclaimer: 'Front-end demo prototype. Bounded strictly to authorized local testing.'
+    };
 
-    if (el.simStateBadge) {
-      el.simStateBadge.className = `sim-state-badge ${run.status}`;
-      el.simStateBadge.innerHTML = stateObj.isPaused 
-        ? '<span>⏸</span> PAUSED' 
-        : run.status === 'completed' 
-          ? '<span>✓</span> COMPLETED' 
-          : '<span>●</span> SIMULATING';
-    }
-
-    if (el.btnPauseResume) {
-      el.btnPauseResume.innerHTML = stateObj.isPaused
-        ? '<span>▶</span> Resume Demo'
-        : '<span>⏸</span> Pause Demo';
-    }
+    const blob = new Blob([JSON.stringify(reportObj, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `AEGIS_Audit_${run.id}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Audit report manifest exported successfully!', 'success');
   }
 
   // Wire Event Listeners
@@ -518,11 +707,55 @@
     el.navWarroom.addEventListener('click', () => setNav('war-room'));
     el.navLogs.addEventListener('click', () => setNav('logs'));
     el.navAbout.addEventListener('click', () => setNav('about'));
+    if (el.brandHomeBtn) el.brandHomeBtn.addEventListener('click', () => setNav('war-room'));
+
+    // Theme Switcher Logic
+    function applyTheme(theme) {
+      if (theme === 'editorial') {
+        document.body.classList.add('theme-editorial');
+        if (el.themeBtnEditorial) el.themeBtnEditorial.classList.add('active');
+        if (el.themeBtnRed) el.themeBtnRed.classList.remove('active');
+      } else {
+        document.body.classList.remove('theme-editorial');
+        if (el.themeBtnRed) el.themeBtnRed.classList.add('active');
+        if (el.themeBtnEditorial) el.themeBtnEditorial.classList.remove('active');
+      }
+      try {
+        localStorage.setItem('aegis_theme', theme);
+      } catch (e) {}
+    }
+
+    if (el.themeBtnRed) {
+      el.themeBtnRed.addEventListener('click', () => {
+        applyTheme('red-black');
+        showToast('Switched to Red & Black Stealth theme', 'info');
+      });
+    }
+
+    if (el.themeBtnEditorial) {
+      el.themeBtnEditorial.addEventListener('click', () => {
+        applyTheme('editorial');
+        showToast('Switched to Warm Ivory Editorial theme', 'info');
+      });
+    }
+
+    // Initialize Default Theme: Red & Black
+    const savedTheme = localStorage.getItem('aegis_theme') || 'red-black';
+    applyTheme(savedTheme);
+
+    // Audio Sound toggle
+    if (el.btnToggleSound) {
+      el.btnToggleSound.addEventListener('click', () => {
+        const isSoundOn = simulator.toggleSound();
+        el.soundIcon.textContent = isSoundOn ? '🔊' : '🔇';
+        el.soundLabel.textContent = isSoundOn ? 'Audio ON' : 'Audio OFF';
+        el.btnToggleSound.classList.toggle('muted', !isSoundOn);
+        showToast(isSoundOn ? 'Synthesizer audio cues enabled' : 'Synthesizer audio muted', 'info');
+      });
+    }
 
     // Simulation controllers
-    el.btnPauseResume.addEventListener('click', () => {
-      simulator.togglePause();
-    });
+    el.btnPauseResume.addEventListener('click', () => simulator.togglePause());
 
     el.btnResetDemo.addEventListener('click', () => {
       simulator.reset();
@@ -561,6 +794,45 @@
       });
     });
 
+    // Copy Buttons
+    if (el.btnCopyCurl) {
+      el.btnCopyCurl.addEventListener('click', () => {
+        const run = simulator.currentRun;
+        if (run && run.finding && run.finding.exploitCommand) {
+          navigator.clipboard.writeText(run.finding.exploitCommand);
+          showToast('cURL replay command copied to clipboard!', 'success');
+        }
+      });
+    }
+
+    if (el.btnCopyEvidence) {
+      el.btnCopyEvidence.addEventListener('click', () => {
+        if (el.evidenceCodeViewer) {
+          navigator.clipboard.writeText(el.evidenceCodeViewer.textContent);
+          showToast('Evidence snippet copied to clipboard!', 'success');
+        }
+      });
+    }
+
+    // Diff Mode Toggle (Unified / Split)
+    if (el.diffModeUnified) {
+      el.diffModeUnified.addEventListener('click', () => {
+        state.diffViewMode = 'unified';
+        el.diffModeUnified.classList.add('active');
+        el.diffModeSplit.classList.remove('active');
+        renderProposedFix();
+      });
+    }
+
+    if (el.diffModeSplit) {
+      el.diffModeSplit.addEventListener('click', () => {
+        state.diffViewMode = 'split';
+        el.diffModeSplit.classList.add('active');
+        el.diffModeUnified.classList.remove('active');
+        renderProposedFix();
+      });
+    }
+
     // Finding review buttons
     el.btnReviewConfirm.addEventListener('click', () => {
       simulator.updateReviewState('Confirmed');
@@ -598,10 +870,50 @@
       simulator.toggleRegressionReproducibility();
       renderRegressionResults();
       const status = simulator.currentRun.isReproducible ? 'VULNERABLE (Reproduced)' : 'REMEDIATED';
-      showToast(`Auditor test outcome toggled: ${status}`, 'info');
+      showToast(`Auditor outcome toggled: ${status}`, 'info');
     });
 
-    // New Run Modal Actions
+    // Live Step-by-Step Regression Retest
+    if (el.btnRetestSuite) {
+      el.btnRetestSuite.addEventListener('click', () => {
+        el.btnRetestSuite.disabled = true;
+        showToast('Auditor Agent replaying regression test suite...', 'info');
+        simulator.replayRegressionSuite(
+          (idx, chk) => {
+            renderRegressionResults();
+          },
+          () => {
+            el.btnRetestSuite.disabled = false;
+            renderRegressionResults();
+            showToast('Regression suite verification completed!', 'success');
+          }
+        );
+      });
+    }
+
+    // Dashboard Search & Filters
+    if (el.dashboardSearchInput) {
+      el.dashboardSearchInput.addEventListener('input', (e) => {
+        state.searchQuery = e.target.value;
+        renderDashboardRuns();
+      });
+    }
+
+    el.filterChips.forEach(chip => {
+      chip.addEventListener('click', (e) => {
+        el.filterChips.forEach(c => c.classList.remove('active'));
+        e.currentTarget.classList.add('active');
+        state.dashboardFilter = e.currentTarget.getAttribute('data-filter');
+        renderDashboardRuns();
+      });
+    });
+
+    // Export Audit Report
+    if (el.btnExportReport) {
+      el.btnExportReport.addEventListener('click', exportAuditReport);
+    }
+
+    // Modal Events
     function openModal() {
       if (el.modalNewRun) {
         el.modalNewRun.classList.add('active');
@@ -620,7 +932,6 @@
     if (el.btnModalClose) el.btnModalClose.addEventListener('click', closeModal);
     if (el.btnModalCancel) el.btnModalCancel.addEventListener('click', closeModal);
 
-    // Scope confirmation checkbox logic
     if (el.chkScopeConfirm) {
       el.chkScopeConfirm.addEventListener('change', (e) => {
         el.btnModalStart.disabled = !e.target.checked;
@@ -628,7 +939,6 @@
       });
     }
 
-    // Test case card selection
     el.testcaseOptionCards.forEach(card => {
       card.addEventListener('click', (e) => {
         el.testcaseOptionCards.forEach(c => c.classList.remove('selected'));
@@ -638,11 +948,14 @@
         if (radio) {
           radio.checked = true;
           state.selectedTestCaseId = radio.value;
+          const selectedCase = window.AEGIS_MOCK.testCases[radio.value];
+          if (selectedCase && el.modalTargetLabel) {
+            el.modalTargetLabel.textContent = selectedCase.targetLabel;
+          }
         }
       });
     });
 
-    // Start Demo Run from modal
     if (el.btnModalStart) {
       el.btnModalStart.addEventListener('click', () => {
         if (!el.chkScopeConfirm.checked) return;
@@ -678,18 +991,21 @@
       }
     });
 
-    // Simulator event bus subscriptions
+    // Simulator Bus Subscriptions
     simulator.subscribe((eventType, data, simState) => {
-      updateControlBar(simState);
+      updateHUD(simState);
       renderTimeline();
       renderFindingDetails();
       renderProposedFix();
       renderRegressionResults();
       renderLogs();
 
+      if (eventType === 'stopwatch_tick') {
+        if (el.simStopwatch) el.simStopwatch.textContent = formatStopwatch(simState.elapsedMs);
+      }
+
       if (eventType === 'run_completed') {
         showToast('Multi-agent workflow run completed successfully!', 'success');
-        // Add to recent runs list in state
         const r = simState.run;
         state.recentRuns.unshift({
           id: r.id,
@@ -700,7 +1016,7 @@
           severity: r.finding.severity === 'HIGH' ? 'High' : 'Medium',
           status: 'Completed',
           remediated: !r.isReproducible,
-          duration: '11.2s',
+          duration: `${(simState.elapsedMs / 1000).toFixed(1)}s`,
           timestamp: 'Just now'
         });
         renderDashboardRuns();
@@ -715,17 +1031,15 @@
     bindEvents();
     renderDashboardRuns();
 
-    // Start initial default simulation run
+    // Launch default initial run
     simulator.startRun('input-validation');
     setNav('war-room');
     setWarRoomTab('finding');
   }
 
-  // Run on DOM Ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
     init();
   }
 })();
-
