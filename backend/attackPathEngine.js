@@ -176,6 +176,85 @@ const ATTACK_PATHS = {
         verified: true
       }
     ]
+  },
+  'path-chained': {
+    id: 'PATH-005',
+    name: 'Chained Multi-Stage Attack Vector: Debug Info Disclosure to Root Account Takeover',
+    cwe: 'CWE-200 + CWE-287',
+    severity: 'CRITICAL',
+    compound_risk: 'LOW + LOW = CRITICAL (Compounding Vulnerability Chain)',
+    description: 'Chains two isolated low-severity weaknesses: debug environment information leakage (CWE-200) harvests internal HMAC salt, which is fed into session restore (CWE-287) to achieve full cluster administrative takeover.',
+    nodes: [
+      {
+        id: 'node-entry-debug',
+        label: 'Ingress Debug Route',
+        sublabel: 'GET /api/v1/system/debug-env',
+        type: 'entry',
+        badge: 'LOW RISK INGRESS',
+        status: 'verified',
+        description: 'Exposed endpoint intended for staging debugging; returns environment variables and memory metrics.',
+        evidence: 'GET /api/v1/system/debug-env HTTP/1.1\nHost: localhost:8080'
+      },
+      {
+        id: 'node-taint-secret',
+        label: 'Harvested Signing Salt',
+        sublabel: 'APP_INTERNAL_HMAC_SALT',
+        type: 'vulnerability',
+        badge: 'CWE-200 INFO DISCLOSURE (LOW)',
+        status: 'verified',
+        description: 'Internal salt token 0x9f4a_internal_sec extracted by Red Agent without needing database access.',
+        evidence: 'Extracted key: APP_INTERNAL_HMAC_SALT = "0x9f4a_internal_sec"'
+      },
+      {
+        id: 'node-session-restore',
+        label: 'Session Restore Gateway',
+        sublabel: 'POST /api/v1/session/restore',
+        type: 'vulnerability',
+        badge: 'CWE-287 INSECURE SIGNATURE (LOW)',
+        status: 'verified',
+        description: 'Accepts offline HMAC signatures without verifying origin IP, client certificates, or nonce freshness.',
+        evidence: 'POST /api/v1/session/restore\nX-Session-Signature: hmac_sha256("root_admin", salt)'
+      },
+      {
+        id: 'node-root-takeover',
+        label: 'Cluster Root Administrator',
+        sublabel: 'Supervisor Session & Data Store',
+        type: 'asset',
+        badge: 'CRITICAL ASSET BREACH',
+        status: 'verified',
+        description: 'Complete compromise of cluster configuration, all database records, and customer accounts.',
+        evidence: 'Response 200 OK: { role: "root_supervisor", permissions: ["*"] }'
+      }
+    ],
+    edges: [
+      {
+        id: 'edge-1',
+        source: 'node-entry-debug',
+        target: 'node-taint-secret',
+        label: 'Harvests Leaked Salt (Step 1)',
+        protocol: 'HTTP/GET',
+        animated: true,
+        verified: true
+      },
+      {
+        id: 'edge-2',
+        source: 'node-taint-secret',
+        target: 'node-session-restore',
+        label: 'Synthesizes Forged Token (Step 2)',
+        protocol: 'Piped Exploit Token',
+        animated: true,
+        verified: true
+      },
+      {
+        id: 'edge-3',
+        source: 'node-session-restore',
+        target: 'node-root-takeover',
+        label: 'Full Root Takeover Achieved',
+        protocol: 'Privileged Session',
+        animated: true,
+        verified: true
+      }
+    ]
   }
 };
 

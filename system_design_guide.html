@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AEGIS-AGENT System Design & Architecture Guide</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 14mm 12mm 14mm 12mm;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 9.5pt;
+      line-height: 1.5;
+      color: #1e293b;
+      background: #ffffff;
+    }
+    .page-break {
+      page-break-before: always;
+      padding-top: 8px;
+    }
+
+    /* Cover / Header */
+    .header-banner {
+      background: linear-gradient(135deg, #090e1a 0%, #172554 100%);
+      color: #ffffff;
+      padding: 22px 24px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      border-left: 6px solid #a3e635;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+    }
+    .badge-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 7.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 2px 7px;
+      border-radius: 3px;
+    }
+    .badge-lime { background: #a3e635; color: #020708; }
+    .badge-blue { background: #38bdf8; color: #0c1322; }
+    .badge-purple { background: #c084fc; color: #0c1322; }
+    .badge-dark { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+
+    h1 {
+      font-size: 19pt;
+      font-weight: 800;
+      line-height: 1.2;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      font-size: 9.5pt;
+      color: #cbd5e1;
+      font-weight: 400;
+      margin-bottom: 12px;
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      padding-top: 10px;
+      border-top: 1px solid #334155;
+      font-size: 8pt;
+      color: #cbd5e1;
+    }
+    .meta-item strong {
+      display: block;
+      color: #a3e635;
+      font-size: 7pt;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Headings */
+    h2 {
+      font-size: 12.5pt;
+      font-weight: 700;
+      color: #0f172a;
+      margin-top: 16px;
+      margin-bottom: 8px;
+      padding-bottom: 3px;
+      border-bottom: 2px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    h2::before {
+      content: "";
+      display: inline-block;
+      width: 4px;
+      height: 14px;
+      background: #a3e635;
+      border-radius: 2px;
+    }
+    h3 {
+      font-size: 10pt;
+      font-weight: 700;
+      color: #1e293b;
+      margin-top: 10px;
+      margin-bottom: 4px;
+    }
+    p {
+      margin-bottom: 6px;
+      font-size: 9pt;
+      color: #334155;
+    }
+    ul, ol {
+      margin-left: 18px;
+      margin-bottom: 8px;
+      font-size: 8.5pt;
+      color: #334155;
+    }
+    li {
+      margin-bottom: 3px;
+    }
+    strong {
+      color: #0f172a;
+    }
+
+    /* Cards */
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+    }
+    .card.highlight { border-left: 4px solid #a3e635; }
+    .card.blue { border-left: 4px solid #3b82f6; }
+    .card.purple { border-left: 4px solid #8b5cf6; }
+    .card.amber { border-left: 4px solid #f59e0b; }
+
+    /* Callouts */
+    .callout {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin: 8px 0;
+      font-size: 8.5pt;
+      color: #166534;
+    }
+    .callout.info {
+      background: #f0f9ff;
+      border-color: #bae6fd;
+      color: #0369a1;
+    }
+    .callout.warn {
+      background: #fffbeb;
+      border-color: #fde68a;
+      color: #92400e;
+    }
+    .callout-title {
+      font-weight: 700;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8pt;
+      margin: 6px 0 12px 0;
+    }
+    th {
+      background: #0f172a;
+      color: #f8fafc;
+      font-weight: 700;
+      text-align: left;
+      padding: 6px 8px;
+      border: 1px solid #334155;
+      font-size: 7.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    td {
+      padding: 5px 8px;
+      border: 1px solid #e2e8f0;
+      color: #334155;
+      vertical-align: top;
+    }
+    tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+
+    .tag {
+      display: inline-block;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 7pt;
+      font-weight: 600;
+      background: #e2e8f0;
+      color: #0f172a;
+      padding: 1px 5px;
+      border-radius: 3px;
+      border: 1px solid #cbd5e1;
+      white-space: nowrap;
+    }
+    .tag.green { background: #dcfce7; color: #166534; border-color: #86efac; }
+    .tag.blue { background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; }
+    .tag.purple { background: #f3e8ff; color: #6b21a8; border-color: #d8b4fe; }
+    .tag.amber { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+
+    /* Code & Diagrams */
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 7.5pt;
+      background: #f1f5f9;
+      color: #0f172a;
+      padding: 1px 4px;
+      border-radius: 3px;
+      border: 1px solid #e2e8f0;
+    }
+    pre {
+      background: #090d16;
+      color: #a3e635;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 7.5pt;
+      padding: 8px 10px;
+      border-radius: 5px;
+      margin: 6px 0;
+      line-height: 1.35;
+      border: 1px solid #1e293b;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 6px 0;
+    }
+
+    .analogy-box {
+      background: #faf5ff;
+      border: 1px solid #e9d5ff;
+      border-left: 4px solid #a855f7;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin: 10px 0;
+      font-size: 8.5pt;
+      color: #581c87;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- COVER BANNER -->
+  <div class="header-banner">
+    <div class="badge-bar">
+      <span class="badge badge-lime">System Design &amp; Architecture</span>
+      <span class="badge badge-blue">Simple Terms Guide</span>
+      <span class="badge badge-purple">Multi-Agent Security</span>
+      <span class="badge badge-dark">Zero-Dependency</span>
+    </div>
+    <h1>AEGIS-AGENT System Design &amp; Architecture</h1>
+    <div class="subtitle">How this autonomous cybersecurity &amp; self-healing platform works — explained in simple, intuitive, step-by-step concepts for engineers, leaders, and evaluators.</div>
+    <div class="meta-grid">
+      <div class="meta-item">
+        <strong>Design Paradigm</strong>
+        Autonomous Multi-Agent SecOps
+      </div>
+      <div class="meta-item">
+        <strong>Core Philosophy</strong>
+        Closed-Loop: Discover &rarr; Prove &rarr; Fix &rarr; Verify
+      </div>
+      <div class="meta-item">
+        <strong>Runtime Architecture</strong>
+        Pure Node.js + Persistent SQLite
+      </div>
+      <div class="meta-item">
+        <strong>Safety Model</strong>
+        Non-Destructive Sandbox SEC-LOCAL-8080
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 1: THE REAL-WORLD ANALOGY -->
+  <h2>1. The Big Picture: How It Works in Plain English</h2>
+  <p>
+    Imagine you own a large commercial building with dozens of doors, security cameras, and locks.
+  </p>
+
+  <div class="two-col">
+    <div class="card">
+      <strong style="color: #dc2626;">How Traditional Security Scanners Work:</strong>
+      <p style="margin-top: 4px;">
+        Traditional scanners (like old-school SAST and DAST) act like an overly sensitive smoke alarm. They walk down the hallway, smell someone making toast, and <strong>sound 500 panic alarms a day</strong>. 
+      </p>
+      <p>
+        They don't tell you if there is an actual fire, they don't test if the door is really unlocked, and they <strong>never repair the lock</strong>. Your security team spends all day reading false alarms and typing reports.
+      </p>
+    </div>
+    <div class="card highlight">
+      <strong style="color: #166534;">How AEGIS-AGENT Works:</strong>
+      <p style="margin-top: 4px;">
+        AEGIS-AGENT acts like a <strong>professional, automated security SWAT &amp; locksmith crew</strong> that works together in a synchronized team of 5 specialized agents:
+      </p>
+      <p>
+        They read the architectural blueprint first, gently jiggle the lock to see if it clicks open, take a timestamped photo of the flaw, craft a brand new custom replacement lock, test it twice to make sure it works, and ask for your permission before bolting it in!
+      </p>
+    </div>
+  </div>
+
+  <div class="analogy-box">
+    <strong style="font-size: 9pt;">🎭 The 5 Agents Explained as Real-World Crew Roles:</strong>
+    <ul style="margin-top: 6px; margin-bottom: 0;">
+      <li><strong>01. The Blueprint Reader (Target Research):</strong> Inspects the Git repository and API specification to map all entrances before anyone touches a door.</li>
+      <li><strong>02. The Boundary Guard (Scope Controller):</strong> Ensures tests ONLY run on the authorized practice building, never touching public neighbors or the real world.</li>
+      <li><strong>03. The Safe Lockpicker (Red Agent):</strong> Tries a non-destructive test key (e.g. <code>' OR '1'='1</code>) to see if the door latch clicks open.</li>
+      <li><strong>04. The Detective (Sentinel Agent):</strong> Inspects the lock mechanism to confirm: <em>"Yes, the latch gave way—this is 100% real, not a false alarm."</em></li>
+      <li><strong>05. The Master Locksmith (Fix Agent / AI):</strong> Uses AI to forge a custom-fitted, secure replacement bolt (writes a parameterized code patch).</li>
+      <li><strong>06. The Certified Inspector (Auditor Agent):</strong> Tests the new bolt: <em>Can the lockpicker break it? NO. Can the keyholder open it? YES.</em></li>
+      <li><strong>07. The Building Owner (Human Operator):</strong> Reviews the photo evidence and lock receipt, clicks <strong>Approve</strong>, and merges the fix.</li>
+    </ul>
+  </div>
+
+  <!-- SECTION 2: SYSTEM ARCHITECTURE TIERS -->
+  <h2>2. High-Level System Architecture (Tiers &amp; Components)</h2>
+  <p>
+    Under the hood, AEGIS is designed as a lightweight, high-performance system with <strong>zero external package dependencies</strong>. Here is how the system components connect:
+  </p>
+
+  <pre>
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ 1. CLIENT TIER (Pure Web Browser • Zero Build Steps)                                  │
+│    • Single Page Application (Vanilla JavaScript ES6 / IIFE • war-room.css)            │
+│    • Real-time Polling Engine (800ms state synchronization)                            │
+│    • Web Audio API Synthesizer (Acoustic telemetry chimes)                             │
+│    • Interactive HUD (Millisecond stopwatch, live progress bar, speed controls)        │
+└──────────────────────────────────────────┬─────────────────────────────────────────────┘
+                                           │ HTTP REST Requests (JSON)
+                                           ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ 2. API &amp; COORDINATION TIER (Native Node.js • Port 3000)                               │
+│    • Core HTTP Server (server.js - Zero external npm dependencies)                     │
+│    • Route Dispatcher (backend/routes.js)                                              │
+│    • Synchronous 5-Stage State Machine (backend/coordinator.js)                        │
+│    • Security Gatekeeper &amp; Allowlist Enforcer (backend/runsStore.js)                   │
+└──────────────────────────────────────────┬─────────────────────────────────────────────┘
+                                           │
+         ┌─────────────────────────────────┼──────────────────────────────────┐
+         ▼                                 ▼                                  ▼
+┌───────────────────────┐       ┌───────────────────────┐          ┌───────────────────────┐
+│ 3. MULTI-AGENT TIER   │       │ 4. AI ENGINE TIER     │          │ 5. STORAGE &amp; MEMORY   │
+│ • Red Agent Prober    │       │ • OpenRouter API      │          │ • Native SQLite DB    │
+│ • Sentinel Validator  │ ────► │ • DeepSeek / Claude   │          │   (aegis_records.db)  │
+│ • Fix Agent Patching  │ ◄──── │ • AST Code Synthesis  │          │ • PostgreSQL Fallback │
+│ • Auditor Regression  │       │ • Heuristic Fallback  │          │ • Regression Memory   │
+└───────────────────────┘       └───────────────────────┘          └───────────────────────┘
+  </pre>
+
+  <!-- PAGE BREAK -->
+  <div class="page-break"></div>
+
+  <!-- SECTION 3: STEP-BY-STEP DATA FLOW -->
+  <h2>3. The Lifecycle of a Security Run (Step-by-Step Data Flow)</h2>
+  <p>
+    Here is exactly what happens behind the scenes from the second you click a button until the final patch is delivered:
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 15%;">Stage / Step</th>
+        <th style="width: 25%;">What You Do in the UI</th>
+        <th style="width: 35%;">What the System Does Behind the Scenes</th>
+        <th style="width: 25%;">Simple Analogy / Result</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Step 1: Target Ingestion</strong></td>
+        <td>Select a preset chip or enter a staging URL on the <strong>Target Research</strong> page.</td>
+        <td>The system sends a request to <code>/api/research/ingest</code>, parses the OpenAPI spec, scans repository route declarations, and extracts parameters.</td>
+        <td>Reads the building blueprint to find all doors and windows.</td>
+      </tr>
+      <tr>
+        <td><strong>Step 2: Scope Verification</strong></td>
+        <td>Check the authorization checkbox and click <strong>Launch Live War Room</strong>.</td>
+        <td><code>runsStore.validateNewRunRequest()</code> checks target allowlist. If external URL, maps it to safe sandbox <code>SEC-LOCAL-8080</code>. Creates run record.</td>
+        <td>The guard checks your permit to make sure you only test your own building.</td>
+      </tr>
+      <tr>
+        <td><strong>Step 3: Red Probing</strong></td>
+        <td>War Room stopwatch starts (<code>00:01.2s</code>). Red Agent node lights up green.</td>
+        <td>Red Agent dispatches a safe syntax-breaker string (like <code>admin' OR '1'='1</code>). The target database encounters a syntax error and returns a 500 trace.</td>
+        <td>Gently jiggles the lock to see if the latch trips open.</td>
+      </tr>
+      <tr>
+        <td><strong>Step 4: Sentinel Evidence</strong></td>
+        <td>Sentinel Agent node turns green; progress reaches 50%.</td>
+        <td>Sentinel Agent evaluates the HTTP response body and stack trace. It confirms the database error contains raw query failure proof, ruling out false positives.</td>
+        <td>Takes an evidentiary photo: "The latch is definitely broken."</td>
+      </tr>
+      <tr>
+        <td><strong>Step 5: AI Fix Synthesis</strong></td>
+        <td>Fix Agent node activates; progress reaches 75%.</td>
+        <td>Fix Agent takes the vulnerable file snippet (e.g. <code>authService.js:42</code>) and asks OpenRouter AI to write a minimal parameterized query unified diff.</td>
+        <td>The master locksmith crafts a custom-fitted, secure replacement bolt.</td>
+      </tr>
+      <tr>
+        <td><strong>Step 6: Auditor Regression</strong></td>
+        <td>Auditor Agent node turns green; progress reaches 100% (<code>COMPLETED</code>).</td>
+        <td>Auditor Agent spins up an isolated worktree. It re-tests the exploit (blocked with <code>400</code>) and legitimate user logins (succeeds with <code>200</code>).</td>
+        <td>Tests the new lock: burglar is locked out, but legitimate family keys work!</td>
+      </tr>
+      <tr>
+        <td><strong>Step 7: Operator Approval</strong></td>
+        <td>Review the diff and click <strong>Approve Patch</strong> or <strong>Export Report</strong>.</td>
+        <td>The system marks the finding as <code>APPROVED_FOR_MERGE</code> and logs the verification fingerprint to persistent SQLite memory.</td>
+        <td>Building owner signs the delivery receipt.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- SECTION 4: HOW EACH AGENT WORKS UNDER THE HOOD -->
+  <h2>4. How the Agents Work Under the Hood (In Simple Terms)</h2>
+
+  <div class="two-col">
+    <div class="card highlight">
+      <strong style="color: #166534;">1. Red Agent (The Ethical Prober)</strong>
+      <p style="margin-top: 4px;">
+        <strong>Question:</strong> <em>Does it do dangerous hacking?</em><br>
+        <strong>Answer:</strong> <strong>NO.</strong> The Red Agent is strictly bounded to non-destructive, safe syntax breaker probes. 
+      </p>
+      <p>
+        Instead of dumping database tables or stealing files, it delivers controlled input sequences (e.g. single quotation marks or path traversals) designed to test input validation boundaries and capture the server's error response.
+      </p>
+    </div>
+    <div class="card blue">
+      <strong style="color: #0369a1;">2. Sentinel Agent (The False-Positive Filter)</strong>
+      <p style="margin-top: 4px;">
+        <strong>Question:</strong> <em>How does it know if a vulnerability is real?</em><br>
+        <strong>Answer:</strong> By requiring <strong>empirical proof</strong>.
+      </p>
+      <p>
+        Traditional scanners guess a vulnerability exists by checking library versions. Sentinel requires proof: it examines the captured HTTP status, database stack trace, and response body. If the evidence does not clearly prove exploitability, it halts the workflow with <code>NEEDS_REVIEW</code>.
+      </p>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="card purple">
+      <strong style="color: #6b21a8;">3. Fix Agent (The AI Patch Maker)</strong>
+      <p style="margin-top: 4px;">
+        <strong>Question:</strong> <em>Does AI rewrite the whole app?</em><br>
+        <strong>Answer:</strong> <strong>NO.</strong> It writes a surgical, minimal diff.
+      </p>
+      <p>
+        The Fix Agent isolates only the 3–5 lines of code responsible for the vulnerability (e.g. replacing string concatenation with SQL parameter binding <code>[?]</code>). It produces a standard Git unified diff that any developer can review in 10 seconds.
+      </p>
+    </div>
+    <div class="card amber">
+      <strong style="color: #92400e;">4. Auditor Agent (The Independent Tester)</strong>
+      <p style="margin-top: 4px;">
+        <strong>Question:</strong> <em>What if the AI patch breaks something?</em><br>
+        <strong>Answer:</strong> That is why the Auditor Agent exists!
+      </p>
+      <p>
+        The Auditor runs a <strong>dual-verification suite</strong> in a temporary disposable directory:
+        <br>&bull; <em>Security Check:</em> Does the hack still work? (Must fail)
+        <br>&bull; <em>Functional Check:</em> Does normal login still work? (Must pass)
+      </p>
+    </div>
+  </div>
+
+  <!-- PAGE BREAK -->
+  <div class="page-break"></div>
+
+  <!-- SECTION 5: DATABASE & STORAGE ARCHITECTURE -->
+  <h2>5. Storage &amp; Database Architecture (Explained Simply)</h2>
+  <p>
+    AEGIS is built to be <strong>zero-maintenance and completely self-contained</strong>. You don't need to install Docker, configure Postgres, or manage external database servers just to run a test:
+  </p>
+
+  <div class="two-col">
+    <div class="card">
+      <strong>Embedded Native SQLite (`node:sqlite`)</strong>
+      <p style="margin-top: 4px;">
+        When you run <code>node server.js</code>, the server automatically initializes a high-performance local SQLite database file at <code>aegis_records.sqlite</code>.
+      </p>
+      <ul>
+        <li>Stores every workflow run, timestamp, and duration.</li>
+        <li>Stores captured evidence, HTTP traces, and call stacks.</li>
+        <li>Stores proposed patches, approvals, and regression results.</li>
+        <li><strong>Zero setup required:</strong> works instantly on any computer.</li>
+      </ul>
+    </div>
+    <div class="card blue">
+      <strong>Enterprise PostgreSQL Integration (Optional)</strong>
+      <p style="margin-top: 4px;">
+        If you provide a <code>DATABASE_URL</code> in your <code>.env</code> file (e.g. connecting to Supabase or AWS RDS), AEGIS automatically connects via a pooled PostgreSQL client.
+      </p>
+      <ul>
+        <li>Applies versioned migrations from <code>migrations/001_initial_schema.sql</code>.</li>
+        <li>Allows multiple operators to view runs across teams.</li>
+        <li>If PostgreSQL connection ever fails, it automatically falls back to native SQLite without crashing!</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- SECTION 6: SAFETY & SECURITY GUARDRAILS -->
+  <h2>6. Security Guardrails: Why AEGIS is 100% Safe</h2>
+  <p>
+    Because AEGIS is an autonomous security tool, it was built with <strong>ironclad defense-in-depth safety boundaries</strong>:
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 25%;">Potential Risk</th>
+        <th style="width: 35%;">How Traditional AI Tools Handle It</th>
+        <th style="width: 40%;">How AEGIS Guarantees Safety</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Scanning Wrong Targets</strong></td>
+        <td>AI agents can follow arbitrary URLs and accidentally attack public infrastructure.</td>
+        <td><strong>Strict Allowlist:</strong> Only explicitly authorized local training application endpoints are permitted. External URLs are mapped into safe local simulation containers.</td>
+      </tr>
+      <tr>
+        <td><strong>Accidental Data Loss</strong></td>
+        <td>Destructive payloads can delete rows, drop tables, or crash production containers.</td>
+        <td><strong>Syntax-Breaker Only:</strong> Probes only test parsing boundaries to capture error traces; zero data deletion or modification commands exist in the payload catalog.</td>
+      </tr>
+      <tr>
+        <td><strong>Unwanted Code Commits</strong></td>
+        <td>Autonomous tools push code directly to GitHub branches without human review.</td>
+        <td><strong>Mandatory Human Gate:</strong> Candidate patches are synthesized in disposable worktrees and require explicit human operator approval before merging.</td>
+      </tr>
+      <tr>
+        <td><strong>Credential Leaks</strong></td>
+        <td>API keys and tokens get accidentally committed to public Git repositories.</td>
+        <td><strong>Push Protection &amp; .env:</strong> All secrets are strictly kept in <code>.env</code> and excluded in <code>.gitignore</code>. The web server blocks direct HTTP requests to hidden files.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- SECTION 7: JUDGES & EVALUATORS CHEATSHEET -->
+  <h2>7. Evaluator &amp; Judge Cheatsheet: 30-Second Summary</h2>
+  <div class="card highlight">
+    <div style="font-size: 10pt; font-weight: 800; color: #0f172a; margin-bottom: 6px;">🎯 What Makes AEGIS-AGENT Stand Out in 3 Bullet Points:</div>
+    <ol style="margin-left: 20px; font-size: 9pt; line-height: 1.6;">
+      <li><strong>It Doesn't Just Detect — It Proves and Heals:</strong> Instead of dumping a list of 50 speculative warnings on a developer's desk, AEGIS captures real proof, generates a working code patch, and verifies that the patch works in under 60 seconds.</li>
+      <li><strong>Zero Hallucinations in Execution:</strong> Even though an LLM writes the code patch, an independent Auditor Agent physically executes a regression test suite against the patch before any human is asked to approve it.</li>
+      <li><strong>Pure Engineering Elegance:</strong> Built with zero external dependencies, native Node.js core modules, high-performance embedded SQLite, pure Vanilla JavaScript, and an XBOW-inspired visual war room with Web Audio sound telemetry.</li>
+    </ol>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="margin-top: 18px; padding-top: 8px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 7.5pt; color: #64748b;">
+    <span>AEGIS-AGENT System Design &amp; Architecture Specification &bull; Simple Terms Guide</span>
+    <span>Autonomous Security Operations Platform &bull; http://localhost:3000</span>
+  </div>
+
+</body>
+</html>
+

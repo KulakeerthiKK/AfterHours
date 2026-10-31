@@ -116,6 +116,13 @@ function generateAuditReport(run) {
         result_text: c.result_text
       })) : []
     } : null,
+    automated_test_harness: run.regression_test_harness ? {
+      filename: run.regression_test_harness.filename,
+      framework: run.regression_test_harness.test_framework,
+      ci_command: run.regression_test_harness.ci_runner_command,
+      test_code: run.regression_test_harness.code
+    } : null,
+    target_talkback_telemetry: run.target_talkback_events && run.target_talkback_events.length > 0 ? run.target_talkback_events : [],
     compliance_statement: {
       scope_verified: true,
       human_in_the_loop_approval_enforced: true,

@@ -57,7 +57,7 @@
         </button>
         <button id="nav-research" class="nav-tab-btn" data-nav="research" aria-label="Target Research and Context Ingestion" title="Input GitHub Repository, Staging URL &amp; API Specs for Context Ingestion">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-          Target Research
+          Target Input &amp; Research <span style="background:rgba(163,230,53,0.22); color:#a3e635; border:1px solid rgba(163,230,53,0.5); font-size:9.5px; font-weight:800; padding:1px 6px; border-radius:10px; margin-left:4px; letter-spacing:0.3px;">INPUT SECTOR</span>
         </button>
         <button id="nav-warroom" class="nav-tab-btn" data-nav="war-room" aria-label="War Room View" title="Live 5-Stage Multi-Agent Security Assessment">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
@@ -222,7 +222,7 @@
               </button>
               <button id="btn-hero-research" class="btn-hero-secondary" style="border-color:rgba(163,230,53,0.4); color:var(--accent-red);">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-                Ingest Target (Repo / URL)
+                Open Target Input Sector (Repo / URL) &rarr;
               </button>
               <button id="btn-hero-launch-warroom" class="btn-hero-secondary">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
@@ -776,7 +776,10 @@ Set-Cookie: auth_session=eyJhbGciOi...
                 Ingest Target &amp; Discover Surface
               </button>
               <button type="button" id="btn-research-reset" class="btn-secondary" style="padding:10px 14px;">
-                Reset
+                Reset Defaults
+              </button>
+              <button type="button" id="btn-research-clear" class="btn-secondary" style="padding:10px 14px; border-color:rgba(239,68,68,0.4); color:#ef4444; font-weight:700;" title="Clear all input fields to enter custom values from scratch">
+                Clear All
               </button>
             </div>
           </form>
@@ -887,6 +890,10 @@ Set-Cookie: auth_session=eyJhbGciOi...
           <button id="btn-quick-tour" class="btn-secondary" style="font-size:12px; padding:9px 14px; display:inline-flex; align-items:center; gap:6px;">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
             How This Works (60s Tour)
+          </button>
+          <button id="btn-quick-target-input" class="btn-secondary" style="font-size:12px; padding:9px 14px; display:inline-flex; align-items:center; gap:6px; border-color:rgba(163,230,53,0.5); color:#a3e635; font-weight:700;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Open Input Sector &rarr;
           </button>
         </div>
       </div>
@@ -1032,6 +1039,14 @@ Set-Cookie: auth_session=eyJhbGciOi...
             <button class="detail-tab-btn" data-tab="regression" role="tab" aria-selected="false" title="Shortcut: 3">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
               Regression Results
+            </button>
+            <button class="detail-tab-btn" data-tab="testharness" role="tab" aria-selected="false" title="Proves fix and keeps it fixed" style="color:#00F0FF;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+              CI/CD Test Harness
+            </button>
+            <button class="detail-tab-btn" data-tab="talkback" role="tab" aria-selected="false" title="Target application communicates back to agent" style="color:#F59E0B;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              📡 Target Talks Back
             </button>
             <button class="detail-tab-btn" data-tab="rawlogs" role="tab" aria-selected="false" title="Shortcut: 4">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
@@ -1305,6 +1320,71 @@ Set-Cookie: auth_session=eyJhbGciOi...
             <pre class="code-viewer" id="warroom-logs-viewer" style="height:400px;">Streaming telemetry...</pre>
           </div>
 
+          <!-- PANE 5: CONTINUOUS REGRESSION TEST HARNESS VIEW (Solves Hurdle Hint 2) -->
+          <div id="pane-testharness" class="detail-pane" role="tabpanel">
+            <div class="plain-english-card audit-card" style="border-color: rgba(0, 240, 255, 0.4); background: rgba(0, 240, 255, 0.04); margin-bottom:14px;">
+              <div class="plain-english-header">
+                <span class="pe-badge" style="background:#00F0FF; color:#000; font-weight:800;">🛡️ Proving the Fix &amp; Keeping it Fixed</span>
+                <span class="pe-badge safe">Automated CI/CD Test Generation</span>
+              </div>
+              <div class="plain-english-content">
+                <strong>Why a test is required:</strong> A fix without an automated test is just a guess. AEGIS autonomously synthesizes a permanent regression test suite (<code>tests/security/test_regression.test.js</code>) verifying that:
+                <br>1. <strong>Exploit is Neutralized:</strong> The exact malicious payload is permanently blocked (HTTP 401/403).
+                <br>2. <strong>Features are Preserved:</strong> Valid customer workflows run smoothly without regression.
+                <br>3. <strong>CI/CD Protection:</strong> Automatically run on every Pull Request via GitHub Actions to ensure the vulnerability <em>stays fixed forever</em>.
+              </div>
+            </div>
+
+            <div class="diff-header-bar" style="background: rgba(15, 23, 42, 0.9); padding:10px 14px; border-radius:6px 6px 0 0; display:flex; justify-content:space-between; align-items:center; border:1px solid #1e293b; border-bottom:none;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-family:var(--font-mono); font-size:12px; color:#00F0FF; font-weight:700;" id="harness-filename">tests/security/test_security_regression.test.js</span>
+                <span class="badge-pill" style="background:rgba(0,255,136,0.15); color:#00FF88; font-size:10px;">JEST / MOCHA / NODE:TEST</span>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <button class="btn-secondary" id="btn-copy-test-code" style="padding:6px 12px; font-size:11px;">Copy Test Code</button>
+                <button class="btn-primary" id="btn-download-test-file" style="padding:6px 12px; font-size:11px;">⬇ Download Test (.js)</button>
+              </div>
+            </div>
+
+            <pre class="terminal-code-body" id="harness-code-display" style="max-height:360px; overflow-y:auto; font-size:12px; background:#080c14; border:1px solid #1e293b; border-radius:0 0 6px 6px; padding:14px; color:#e2e8f0; font-family:var(--font-mono); line-height:1.5;">// Loading synthesized test suite...</pre>
+
+            <div class="notice-box" style="margin-top:12px; margin-bottom:0;">
+              <div class="notice-box-text" style="font-size:11px; color:#94a3b8;">
+                <strong>CI/CD Pipeline Guard:</strong> Place this test in <code>tests/security/</code> and trigger via <code>npm test</code> on every Pull Request.
+              </div>
+            </div>
+          </div>
+
+          <!-- PANE 6: TARGET TALKS BACK VIEW (Solves Hurdle Hint 3) -->
+          <div id="pane-talkback" class="detail-pane" role="tabpanel">
+            <div class="plain-english-card" style="border-color: rgba(245, 158, 11, 0.4); background: rgba(245, 158, 11, 0.04); margin-bottom:14px;">
+              <div class="plain-english-header">
+                <span class="pe-badge" style="background:#F59E0B; color:#000; font-weight:800;">📡 Bi-Directional Target Telemetry</span>
+                <span style="font-size:11px; color:#F59E0B; font-weight:700;">HACKATHON HURDLE 32 &bull; ACTIVE HANDSHAKE</span>
+              </div>
+              <div class="plain-english-content">
+                <strong>The app you are attacking talks back to your agent:</strong> Unlike traditional blind scanners, the target application in SEC-LOCAL-8080 has an internal runtime feedback sensor.
+                <br>&bull; <strong>Runtime Exception Stream:</strong> Target communicates intercepted syntax breaks &amp; thread stack traces directly to the Red Agent.
+                <br>&bull; <strong>Adaptive Challenges:</strong> Target WAF emits dynamic nonces &amp; rate limit warnings back to the agent.
+                <br>&bull; <strong>Hot-Reload Memory Verification:</strong> Target sandbox reloads patch candidate into memory and reports 100% health assertion status directly to Auditor!
+              </div>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <div style="font-size:12px; font-weight:700; color:#F59E0B; display:flex; align-items:center; gap:8px;">
+                <span class="status-pulse-dot" style="background:#F59E0B;"></span>
+                <span>LIVE IN-APP TARGET FEEDBACK STREAM (SEC-LOCAL-8080 &rarr; AEGIS-AGENT)</span>
+              </div>
+              <button class="btn-secondary" id="btn-simulate-target-talkback" style="padding:6px 12px; font-size:11px; border-color:#F59E0B; color:#F59E0B;">
+                📡 Send In-App Target Callback
+              </button>
+            </div>
+
+            <div id="target-talkback-stream" style="background:#090d16; border:1px solid #1e293b; border-radius:6px; padding:12px; min-height:220px; max-height:340px; overflow-y:auto; font-family:var(--font-mono); font-size:12px;">
+              <div style="color:#64748b; font-style:italic;">Awaiting live feedback callbacks from target application...</div>
+            </div>
+          </div>
+
         </section>
       </div>
     </div>
@@ -1325,6 +1405,7 @@ Set-Cookie: auth_session=eyJhbGciOi...
             <button class="btn-path-tab active" data-path="path-sqli">CWE-89 SQLi</button>
             <button class="btn-path-tab" data-path="path-jwt">CWE-287 Auth Bypass</button>
             <button class="btn-path-tab" data-path="path-traversal">CWE-22 Path Traversal</button>
+            <button class="btn-path-tab" data-path="path-chained" style="border-color:#F59E0B; color:#F59E0B; font-weight:700;">🔗 Chained Bug (CWE-200+287)</button>
           </div>
         </div>
 
@@ -1721,7 +1802,7 @@ Vulnerability confirmed: Authentication bypassed without valid password</pre>
 
         <!-- Test Case Selector -->
         <div class="form-group">
-          <label class="form-label">Select Security Test Case (4 Options)</label>
+          <label class="form-label">Select Security Test Case (5 Options)</label>
           <div class="testcase-options-list">
             
             <label class="testcase-option-card selected">
@@ -1753,6 +1834,14 @@ Vulnerability confirmed: Authentication bypassed without valid password</pre>
               <div class="testcase-info">
                 <h4>Command injection check (CWE-78)</h4>
                 <p>Audits OS command subprocess execution in local ping diagnostic utility</p>
+              </div>
+            </label>
+
+            <label class="testcase-option-card" style="border-color: rgba(245, 158, 11, 0.4);">
+              <input type="radio" name="testcase" value="chained-bugs" class="testcase-radio">
+              <div class="testcase-info">
+                <h4>🔗 Chained Multi-Stage Exploit (CWE-200 + CWE-287) <span style="font-size:10px; background:#F59E0B; color:#000; padding:1px 6px; border-radius:4px; font-weight:700;">HURDLE 32</span></h4>
+                <p>Chains two 'low' issues: debug env secret harvest into administrative session forgery &bull; Target Talks Back enabled</p>
               </div>
             </label>
 

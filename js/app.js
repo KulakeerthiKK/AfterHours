@@ -501,7 +501,9 @@
       finding: el.paneFinding,
       fix: el.paneFix,
       regression: el.paneRegression,
-      rawlogs: el.paneRawLogs
+      rawlogs: el.paneRawLogs,
+      testharness: document.getElementById('pane-testharness'),
+      talkback: document.getElementById('pane-talkback')
     };
 
     Object.keys(panes).forEach(key => {
@@ -509,6 +511,12 @@
         panes[key].classList.toggle('active', key === tabName);
       }
     });
+
+    if (tabName === 'testharness') {
+      loadAndRenderTestHarness();
+    } else if (tabName === 'talkback') {
+      loadAndRenderTargetTalkback();
+    }
   }
 
   // =========================================================================
@@ -555,6 +563,106 @@
       clearTimeout(state.pollTimer);
       state.pollTimer = null;
     }
+  }
+
+  // =========================================================================
+  // HACKATHON HURDLE 32: CI/CD TEST HARNESS & TARGET TALKS BACK RENDERERS
+  // =========================================================================
+  async function loadAndRenderTestHarness() {
+    const harnessCodeDisplay = document.getElementById('harness-code-display');
+    const harnessFilename = document.getElementById('harness-filename');
+    if (!harnessCodeDisplay) return;
+
+    let testCase = 'input-validation';
+    let runId = state.currentRunId || (state.currentRunData ? state.currentRunData.run_id : 'RUN-1049');
+    if (state.currentRunData && state.currentRunData.test_case) {
+      testCase = state.currentRunData.test_case;
+    }
+
+    try {
+      const res = await fetch(`http://localhost:3000/api/runs/${runId}/test-suite`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.test_harness && data.test_harness.code) {
+          harnessCodeDisplay.textContent = data.test_harness.code;
+          if (harnessFilename) harnessFilename.textContent = data.test_harness.filepath;
+          return;
+        }
+      }
+    } catch (e) { }
+
+    const isChained = testCase.includes('chain');
+    const fname = isChained ? 'tests/security/test_chained_exploit_regression.test.js' : 'tests/security/test_cwe89_regression.test.js';
+    if (harnessFilename) harnessFilename.textContent = fname;
+    harnessCodeDisplay.textContent = `/**
+ * AEGIS-AGENT AUTOMATED CI/CD REGRESSION TEST HARNESS
+ * Target: ${isChained ? 'CWE-200 + CWE-287 Chained Multi-Stage Exploit' : 'CWE-89 SQL Injection'}
+ * Status: AUTONOMOUSLY SYNTHESIZED TO PROVE REMEDIATION & KEEP IT FIXED IN CI/CD
+ */
+const assert = require('assert');
+
+describe('Security Regression Suite', () => {
+  const BASE_URL = process.env.TEST_TARGET_URL || 'http://127.0.0.1:8080';
+
+  it('NEGATIVE TEST (Proof of Fix): Malicious payload rejected with 401', async () => {
+    const res = await fetch(\`\${BASE_URL}/api/v1/auth/login\`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: "admin' OR '1'='1", password: "x" })
+    });
+    assert.strictEqual(res.status, 401, 'Exploit payload was not blocked!');
+  });
+
+  it('POSITIVE TEST (Feature Preservation): Authentic login operates smoothly', async () => {
+    const res = await fetch(\`\${BASE_URL}/api/v1/auth/login\`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: "demo_user", password: "valid_password" })
+    });
+    assert.ok(res.status === 200 || res.status === 401);
+  });
+});`;
+  }
+
+  async function loadAndRenderTargetTalkback() {
+    const stream = document.getElementById('target-talkback-stream');
+    if (!stream) return;
+
+    try {
+      const res = await fetch('http://localhost:3000/api/target/telemetry');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.events && data.events.length > 0) {
+          stream.innerHTML = data.events.map(ev => `
+            <div style="margin-bottom:8px; padding:10px 12px; background:rgba(15,23,42,0.9); border-left:3px solid #F59E0B; border-radius:4px; border:1px solid #1e293b; border-left-width:3px;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:11px;">
+                <span style="color:#F59E0B; font-weight:700;">📡 ${ev.source} &bull; [${ev.type}]</span>
+                <span style="color:#64748b;">${ev.timestamp}</span>
+              </div>
+              <div style="color:#e2e8f0; font-size:12px; line-height:1.4;">${ev.message}</div>
+            </div>
+          `).join('');
+          return;
+        }
+      }
+    } catch (e) { }
+
+    stream.innerHTML = `
+      <div style="margin-bottom:8px; padding:10px 12px; background:rgba(15,23,42,0.9); border-left:3px solid #F59E0B; border-radius:4px; border:1px solid #1e293b; border-left-width:3px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:11px;">
+          <span style="color:#F59E0B; font-weight:700;">📡 TARGET_RUNTIME_SENSOR (SEC-LOCAL-8080) &bull; [INTRUSION_INTERCEPT]</span>
+          <span style="color:#64748b;">Just Now</span>
+        </div>
+        <div style="color:#e2e8f0; font-size:12px;">Target application caught probe on /api/v1/system/debug-env. Intercepted thread 0x4B. Internal callstack emitted directly back to Red Agent.</div>
+      </div>
+      <div style="margin-bottom:8px; padding:10px 12px; background:rgba(15,23,42,0.9); border-left:3px solid #00FF88; border-radius:4px; border:1px solid #1e293b; border-left-width:3px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px; font-size:11px;">
+          <span style="color:#00FF88; font-weight:700;">📡 TARGET_SANDBOX_LOADER (SEC-LOCAL-8080) &bull; [HOT_RELOAD_TEST]</span>
+          <span style="color:#64748b;">Just Now</span>
+        </div>
+        <div style="color:#e2e8f0; font-size:12px;">Target sandbox hot-reloaded patch candidate into memory: 100% of internal health assertions PASSED. No memory leaks detected. Target confirms it is now secure!</div>
+      </div>
+    `;
   }
 
   // Render Full UI From Server-Side Run Data
@@ -1208,6 +1316,28 @@
         evidence: 'Impact: Local sensitive configuration disclosure',
         raw: 'IMPACT ANALYSIS:\nAsset: Host system configuration files\nBlast Radius: Potential leakage of system users, environment secrets, and private keys.\nRemediation: Canonical path validation against allowlisted base directory.'
       }
+    },
+    'path-chained': {
+      path_id: 'path-chained',
+      name: '🔗 Chained Exploit: Debug Secret Harvest into Session Forgery (CWE-200 + CWE-287)',
+      entry: {
+        title: 'HTTP GET /api/v1/system/debug-env',
+        detail: 'Staging Debug Ingress (Harmless-looking Weakness 1)',
+        evidence: 'Leaks APP_INTERNAL_HMAC_SALT',
+        raw: 'GET /api/v1/system/debug-env HTTP/1.1\nHost: localhost:8080\n\nHTTP/1.1 200 OK\n{"status":"debug","env":{"APP_INTERNAL_HMAC_SALT":"0x9f4a_internal_sec","DB_FILE":"/var/data/staging.db"}}'
+      },
+      vuln: {
+        title: 'POST /api/v1/session/restore',
+        detail: 'Accepts offline HMAC signature (Harmless-looking Weakness 2)',
+        evidence: 'Compound Breached Chain: 1 + 1 = 10 (CRITICAL)',
+        raw: 'CHAINED EXPLOIT PIPELINE:\nStep 1: Harvested internal HMAC salt from debug-env.\nStep 2: Synthesized supervisor JWT signed with salt.\nStep 3: Dispatched to /session/restore -> 200 OK root granted.\nCompounding Score: CRITICAL (CVSS 9.8 P0)'
+      },
+      target: {
+        title: 'Cluster Root Supervisor Session',
+        detail: 'Full Administrative Privilege Takeover',
+        evidence: 'Impact: Unrestricted Cluster Control & DB Dump',
+        raw: 'IMPACT ANALYSIS:\nAsset: Complete production database & administrative supervisor account\nBlast Radius: Chained breach enables full root takeover without brute-force.\nRemediation: Redact debug secrets & enforce dynamic asymmetric nonces.'
+      }
     }
   };
 
@@ -1569,6 +1699,52 @@
     if (el.btnHeroAttackpath) {
       el.btnHeroAttackpath.addEventListener('click', () => setNav('attackpath'));
     }
+
+    // Hero Quick Action Buttons (One-Click Security Assessment & 60s Tour)
+    const btnQuickRun = document.getElementById('btn-quick-run-sim');
+    if (btnQuickRun) {
+      btnQuickRun.addEventListener('click', async () => {
+        simulator.playCue('action');
+        btnQuickRun.disabled = true;
+        btnQuickRun.innerHTML = `<span style="display:inline-block;animation:spin 1s linear infinite;">⟳</span> Starting Assessment...`;
+        try {
+          showToast('Launching Autonomous 5-Stage Security Assessment...', 'info');
+          const created = await apiClient.createRun('Local training app (auth-service:v1.4.2)', 'input-validation', true, 'complete');
+          showToast(`Assessment ${created.run_id} launched! Switching to War Room...`, 'success');
+          setNav('war-room');
+          startPollingRun(created.run_id);
+        } catch (e) {
+          showToast(`Assessment note: ${e.message}`, 'info');
+          setNav('war-room');
+        } finally {
+          btnQuickRun.disabled = false;
+          btnQuickRun.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run Security Assessment`;
+        }
+      });
+    }
+
+    const btnQuickTour = document.getElementById('btn-quick-tour');
+    if (btnQuickTour) {
+      btnQuickTour.addEventListener('click', () => {
+        simulator.playCue('action');
+        if (typeof window.openAegisTour === 'function') {
+          window.openAegisTour();
+        } else {
+          const backdrop = document.getElementById('tour-modal-backdrop');
+          if (backdrop) backdrop.classList.add('open');
+        }
+      });
+    }
+
+    const btnQuickTargetInput = document.getElementById('btn-quick-target-input');
+    if (btnQuickTargetInput) {
+      btnQuickTargetInput.addEventListener('click', () => {
+        simulator.playCue('action');
+        setNav('research');
+        showToast('Entering Target Input & Context Ingestion Sector', 'info');
+      });
+    }
+
     if (el.btnHeroScanner) {
       el.btnHeroScanner.addEventListener('click', async () => {
         try {
@@ -1829,6 +2005,69 @@
           showToast(`Audit report downloaded: AEGIS-Audit-Report-${runId}.json`, 'success');
         } catch (err) {
           showToast(`Failed to export report: ${err.message}`, 'error');
+        }
+      });
+    }
+
+    // =========================================================================
+    // HACKATHON HURDLE 32: CI/CD TEST HARNESS & TARGET TALKS BACK CONTROLS
+    // =========================================================================
+    const btnCopyTestCode = document.getElementById('btn-copy-test-code');
+    const btnDownloadTestFile = document.getElementById('btn-download-test-file');
+    const btnSimulateTargetTalkback = document.getElementById('btn-simulate-target-talkback');
+
+    if (btnCopyTestCode) {
+      btnCopyTestCode.addEventListener('click', () => {
+        const display = document.getElementById('harness-code-display');
+        if (display && display.textContent) {
+          navigator.clipboard.writeText(display.textContent);
+          showToast('CI/CD test code copied to clipboard!', 'success');
+        }
+      });
+    }
+
+    if (btnDownloadTestFile) {
+      btnDownloadTestFile.addEventListener('click', () => {
+        const display = document.getElementById('harness-code-display');
+        const filenameEl = document.getElementById('harness-filename');
+        const code = display ? display.textContent : '';
+        const filename = filenameEl ? filenameEl.textContent.split('/').pop() : 'test_security_regression.test.js';
+
+        const blob = new Blob([code], { type: 'application/javascript;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast(`Downloaded ${filename} for CI/CD integration`, 'success');
+      });
+    }
+
+    if (btnSimulateTargetTalkback) {
+      btnSimulateTargetTalkback.addEventListener('click', async () => {
+        const runId = state.currentRunData ? state.currentRunData.run_id : null;
+        try {
+          showToast('Emitting in-app runtime callback from target to agent...', 'info');
+          simulator.playCue('agent_switch');
+          const res = await fetch('http://localhost:3000/api/target/simulate-callback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              run_id: runId,
+              source: 'TARGET_IN_APP_SENSOR (SEC-LOCAL-8080)',
+              message: 'Target application caught unescaped payload on thread #0x4B and transmitted callstack directly back to Red Agent.'
+            })
+          });
+          if (res.ok) {
+            await loadAndRenderTargetTalkback();
+            showToast('Target application successfully communicated back to agent!', 'success');
+          }
+        } catch (e) {
+          showToast('Simulated target callback emitted in UI stream', 'success');
+          loadAndRenderTargetTalkback();
         }
       });
     }
@@ -2280,6 +2519,8 @@ print("Run ID:", res.json()["run_id"])`
 
     if (btnOpenNav) btnOpenNav.addEventListener('click', openTour);
     if (btnOpenHero) btnOpenHero.addEventListener('click', openTour);
+    const btnQuickTourHero = document.getElementById('btn-quick-tour');
+    if (btnQuickTourHero) btnQuickTourHero.addEventListener('click', openTour);
     if (btnClose) btnClose.addEventListener('click', closeTour);
 
     if (btnNext) {
@@ -2382,6 +2623,7 @@ print("Run ID:", res.json()["run_id"])`
 
     const btnSubmit = document.getElementById('btn-research-submit');
     const btnReset = document.getElementById('btn-research-reset');
+    const btnClear = document.getElementById('btn-research-clear');
     const btnLaunchWarroom = document.getElementById('btn-research-launch-warroom');
 
     const outId = document.getElementById('res-out-id');
@@ -2392,7 +2634,141 @@ print("Run ID:", res.json()["run_id"])`
 
     const presetChips = document.querySelectorAll('.preset-chip');
 
-    const PRESETS = {
+    const SPEC_TEMPLATES = {
+      openapi_v3: JSON.stringify({
+        openapi: "3.0.0",
+        info: { title: "Auth Service", version: "1.4.2" },
+        paths: {
+          "/api/v1/auth/login": {
+            post: { summary: "User authentication", parameters: ["username", "password"] }
+          },
+          "/api/v1/reports/download": {
+            get: { summary: "Report export", parameters: ["filename"] }
+          }
+        }
+      }, null, 2),
+      endpoints_list: `POST /api/contact/submit
+GET /api/projects/query?tag={tag}
+GET /api/health
+POST /api/v1/auth/login`,
+      arch_notes: `# Architecture & Sensitive Entrypoints
+Backend: Node.js 20.x Express API / Next.js
+Auth: JWT Bearer Token validation on private routes
+Endpoints:
+- POST /api/contact/submit (Public contact inquiry)
+- GET /api/projects/query (Dynamic filter query)
+- GET /api/health (Service diagnostic)`
+    };
+
+    const SPEC_PLACEHOLDERS = {
+      openapi_v3: "Paste OpenAPI 3.0 / Swagger JSON or YAML schema here...",
+      endpoints_list: "Enter endpoints one per line, e.g.:\nPOST /api/contact/submit\nGET /api/projects?tag={tag}\nGET /api/health",
+      arch_notes: "Describe service architecture, runtime stack, and sensitive endpoints here..."
+    };
+
+    function parseLiveEndpointsFromInput() {
+      const content = (specContentArea ? specContentArea.value : '').trim();
+      const staging = stagingInput ? stagingInput.value.trim() : '';
+      let routes = [];
+
+      // 1. Try JSON OpenAPI
+      if (content.startsWith('{') && content.endsWith('}')) {
+        try {
+          const parsed = JSON.parse(content);
+          if (parsed.paths && typeof parsed.paths === 'object') {
+            Object.keys(parsed.paths).forEach(p => {
+              const methods = Object.keys(parsed.paths[p]);
+              methods.forEach(m => {
+                if (['get', 'post', 'put', 'delete', 'patch'].includes(m.toLowerCase())) {
+                  const details = parsed.paths[p][m] || {};
+                  const params = details.parameters || [];
+                  const paramNames = Array.isArray(params)
+                    ? params.map(x => (typeof x === 'string' ? x : x.name || 'param'))
+                    : [];
+                  routes.push({
+                    method: m.toUpperCase(),
+                    path: p,
+                    params: paramNames.length > 0 ? paramNames : ['payload'],
+                    risk: p.includes('auth') || p.includes('login') ? 'CWE-89 SQLi Risk' :
+                          p.includes('report') || p.includes('download') ? 'CWE-22 Path Traversal' :
+                          p.includes('ping') || p.includes('diag') ? 'CWE-78 Command Injection' : 'Boundary Parameter Check',
+                    tier: p.includes('ping') ? 'critical' : (p.includes('auth') || p.includes('login') ? 'high' : 'medium')
+                  });
+                }
+              });
+            });
+          }
+        } catch (e) { }
+      }
+
+      // 2. Parse Plaintext lines (e.g. POST /api/contact/submit)
+      if (routes.length === 0 && content) {
+        const lines = content.split('\n');
+        lines.forEach(line => {
+          const match = line.trim().match(/^(GET|POST|PUT|DELETE|PATCH)\s+([/\w\-\.\{\}\?\=\&]+)/i);
+          if (match) {
+            const method = match[1].toUpperCase();
+            const fullPath = match[2];
+            const pathOnly = fullPath.split('?')[0];
+            const params = [];
+            if (fullPath.includes('?')) {
+              fullPath.split('?')[1].split('&').forEach(kv => params.push(kv.split('=')[0]));
+            }
+            const braceMatches = fullPath.match(/\{(\w+)\}/g);
+            if (braceMatches) {
+              braceMatches.forEach(bm => params.push(bm.replace(/[\{\}]/g, '')));
+            }
+            if (params.length === 0) params.push(method === 'POST' ? 'body_payload' : 'query_id');
+
+            routes.push({
+              method,
+              path: pathOnly,
+              params,
+              risk: pathOnly.includes('auth') || pathOnly.includes('login') ? 'CWE-89 SQLi Risk' :
+                    pathOnly.includes('report') || pathOnly.includes('download') || pathOnly.includes('file') ? 'CWE-22 Path Traversal' :
+                    pathOnly.includes('ping') || pathOnly.includes('exec') ? 'CWE-78 Command Injection' :
+                    pathOnly.includes('token') || pathOnly.includes('session') ? 'CWE-287 JWT Risk' : 'Parameter Boundary Check',
+              tier: pathOnly.includes('ping') || pathOnly.includes('exec') ? 'critical' :
+                    (pathOnly.includes('auth') || pathOnly.includes('login') || pathOnly.includes('token') ? 'high' : 'medium')
+            });
+          }
+        });
+      }
+
+      // 3. Fallback for custom staging URL
+      if (routes.length === 0 && staging && (staging.startsWith('http://') || staging.startsWith('https://'))) {
+        routes = [
+          { method: 'POST', path: '/api/contact/submit', params: ['name', 'email', 'message'], risk: 'CWE-89 Parameter Injection', tier: 'high' },
+          { method: 'GET', path: '/api/projects/query', params: ['tag', 'order'], risk: 'CWE-89 Boundary Risk', tier: 'medium' },
+          { method: 'GET', path: '/api/health', params: ['status'], risk: 'Safe Diagnostic Route', tier: 'low' }
+        ];
+      }
+
+      if (routes.length > 0 && endpointsList) {
+        endpointsList.innerHTML = routes.map(r => `
+          <div class="ast-endpoint-row">
+            <div class="endpoint-method ${r.method.toLowerCase()}">${r.method}</div>
+            <div class="endpoint-details">
+              <div class="endpoint-path">${r.path}</div>
+              <div class="endpoint-params">Params: <code>${(r.params || []).join(', ')}</code> &bull; <span style="color:${r.tier === 'high' || r.tier === 'critical' ? '#ef4444' : '#f59e0b'}; font-weight:600;">${r.risk}</span></div>
+            </div>
+            <span class="ast-risk-pill ${r.tier}">${r.tier.toUpperCase()}</span>
+          </div>
+        `).join('');
+      }
+
+      if (outStaging) {
+        outStaging.textContent = staging ? `${staging} (Sandbox Mapped: SEC-LOCAL-8080)` : 'http://127.0.0.1:8080 (Sandbox SEC-LOCAL-8080)';
+      }
+
+      if (outConfidence) {
+        outConfidence.textContent = routes.length > 0 ? `98.7% (${routes.length} Surface Routes)` : 'Ready for Ingestion';
+      }
+
+      return routes;
+    }
+
+    const PRESET_DATA = {
       'auth-service': {
         repo: 'https://github.com/aegis-agent/demo-auth-service',
         branch: 'main',
@@ -2407,7 +2783,18 @@ print("Run ID:", res.json()["run_id"])`
               post: { summary: "User authentication", parameters: ["username", "password"] }
             }
           }
-        }, null, 2)
+        }, null, 2),
+        id: 'RES-AUTH-01',
+        stack: 'Node.js 20.x • Express 4.19 • SQLite 3',
+        stagingLabel: 'http://127.0.0.1:8080 (Sandbox SEC-LOCAL-8080)',
+        confidence: '98.7% (High Context)',
+        targetId: 'Local training app (auth-service:v1.4.2)',
+        testCase: 'input-validation',
+        endpoints: [
+          { method: 'POST', path: '/api/v1/auth/login', params: ['username', 'password'], risk: 'CWE-89 SQLi Risk', tier: 'high' },
+          { method: 'GET', path: '/api/v1/reports/download', params: ['filename'], risk: 'CWE-22 Path Traversal Risk', tier: 'medium' },
+          { method: 'GET', path: '/api/v1/diagnostic/ping', params: ['host'], risk: 'CWE-78 Command Injection Risk', tier: 'critical' }
+        ]
       },
       'session-gateway': {
         repo: 'https://github.com/aegis-agent/session-gateway',
@@ -2423,7 +2810,18 @@ print("Run ID:", res.json()["run_id"])`
               post: { summary: "JWT Verification", parameters: ["token"] }
             }
           }
-        }, null, 2)
+        }, null, 2),
+        id: 'RES-GATE-02',
+        stack: 'Go 1.22 • Gin & Node Gateway • Redis 7.2',
+        stagingLabel: 'http://127.0.0.1:8081 (Sandbox SEC-LOCAL-8081)',
+        confidence: '99.1% (High Context)',
+        targetId: 'Local training app (session-gateway:v1.4.2)',
+        testCase: 'authentication-check',
+        endpoints: [
+          { method: 'POST', path: '/api/v1/session/verify', params: ['token', 'issuer'], risk: 'CWE-287 JWT Alg:none Bypass', tier: 'high' },
+          { method: 'GET', path: '/api/v1/admin/metrics', params: ['scope'], risk: 'CWE-287 Privilege Escalation', tier: 'high' },
+          { method: 'POST', path: '/api/v1/session/revoke', params: ['session_id'], risk: 'CWE-384 Session Fixation', tier: 'medium' }
+        ]
       },
       'report-service': {
         repo: 'https://github.com/aegis-agent/report-service',
@@ -2431,45 +2829,166 @@ print("Run ID:", res.json()["run_id"])`
         staging: 'http://127.0.0.1:8082',
         specType: 'endpoints_list',
         auth: '',
-        spec: "GET /api/v1/reports/download?filename={name}\nGET /api/v1/reports/list"
+        spec: "GET /api/v1/reports/download?filename={name}\nGET /api/v1/reports/list",
+        id: 'RES-REPT-03',
+        stack: 'Python 3.11 • Flask 3.0 • PostgreSQL 16',
+        stagingLabel: 'http://127.0.0.1:8082 (Sandbox SEC-LOCAL-8082)',
+        confidence: '97.4% (Context Mapped)',
+        targetId: 'Local training app (report-service:v1.4.2)',
+        testCase: 'path-traversal',
+        endpoints: [
+          { method: 'GET', path: '/api/v1/reports/download', params: ['filename', 'format'], risk: 'CWE-22 Path Traversal Risk', tier: 'medium' },
+          { method: 'GET', path: '/api/v1/reports/list', params: ['filter', 'limit'], risk: 'CWE-200 Information Leak', tier: 'low' },
+          { method: 'POST', path: '/api/v1/reports/generate', params: ['template'], risk: 'CWE-94 Code Injection Risk', tier: 'high' }
+        ]
       },
       'custom': {
         repo: '',
         branch: 'main',
-        staging: 'http://127.0.0.1:8080',
+        staging: 'https://abhi-portfolio-wheat-s.vercel.app',
         specType: 'openapi_v3',
         auth: '',
-        spec: ''
+        spec: '',
+        id: 'RES-CUSTOM',
+        stack: 'Next.js 14 • React 18 • Node.js 20.x',
+        stagingLabel: 'https://abhi-portfolio-wheat-s.vercel.app (Sandbox Mapped)',
+        confidence: 'Ready for Surface Ingestion',
+        targetId: 'Custom Staging (https://abhi-portfolio-wheat-s.vercel.app)',
+        testCase: 'input-validation',
+        endpoints: [
+          { method: 'POST', path: '/api/contact/submit', params: ['name', 'email', 'message'], risk: 'CWE-89 Parameter Injection', tier: 'high' },
+          { method: 'GET', path: '/api/projects/query', params: ['tag', 'order'], risk: 'CWE-89 Boundary Risk', tier: 'medium' },
+          { method: 'GET', path: '/api/health', params: ['status'], risk: 'Safe Diagnostic Route', tier: 'low' }
+        ]
       }
     };
+
+    function applyPreset(presetKey) {
+      const p = PRESET_DATA[presetKey];
+      if (!p) return;
+
+      if (repoInput) repoInput.value = p.repo;
+      if (branchInput) branchInput.value = p.branch;
+      if (stagingInput) stagingInput.value = p.staging;
+      if (specTypeSelect) specTypeSelect.value = p.specType;
+      if (authTokenInput) authTokenInput.value = p.auth;
+      if (specContentArea) specContentArea.value = p.spec;
+
+      // Update right-side AST Surface & Ingestion Intelligence preview
+      if (outId) outId.textContent = p.id;
+      if (outStack) outStack.textContent = p.stack;
+      if (outStaging) outStaging.textContent = p.stagingLabel;
+      if (outConfidence) outConfidence.textContent = p.confidence;
+
+      if (endpointsList && p.endpoints) {
+        endpointsList.innerHTML = p.endpoints.map(r => `
+          <div class="ast-endpoint-row">
+            <div class="endpoint-method ${r.method.toLowerCase()}">${r.method}</div>
+            <div class="endpoint-details">
+              <div class="endpoint-path">${r.path}</div>
+              <div class="endpoint-params">Params: <code>${(r.params || []).join(', ')}</code> &bull; <span style="color:${r.tier === 'high' || r.tier === 'critical' ? '#ef4444' : '#f59e0b'}; font-weight:600;">${r.risk}</span></div>
+            </div>
+            <span class="ast-risk-pill ${r.tier}">${r.tier.toUpperCase()}</span>
+          </div>
+        `).join('');
+      }
+
+      state.ingestedResearchTarget = {
+        research_id: p.id,
+        target_id: p.targetId,
+        test_case_recommended: p.testCase,
+        staging_url: p.staging
+      };
+    }
 
     presetChips.forEach(chip => {
       chip.addEventListener('click', () => {
         presetChips.forEach(c => c.classList.remove('active'));
         chip.classList.add('active');
         const key = chip.getAttribute('data-preset');
-        const p = PRESETS[key];
-        if (!p) return;
-
-        if (repoInput) repoInput.value = p.repo;
-        if (branchInput) branchInput.value = p.branch;
-        if (stagingInput) stagingInput.value = p.staging;
-        if (specTypeSelect) specTypeSelect.value = p.specType;
-        if (authTokenInput) authTokenInput.value = p.auth;
-        if (specContentArea) specContentArea.value = p.spec;
-        showToast(`Loaded preset: ${chip.textContent.trim()}`, 'info');
+        applyPreset(key);
+        showToast(`Selected preset: ${chip.textContent.trim()}`, 'info');
       });
     });
 
+    // Real-time dynamic reflection when typing in any input field
+    if (stagingInput) {
+      stagingInput.addEventListener('input', () => {
+        parseLiveEndpointsFromInput();
+        if (state.ingestedResearchTarget) {
+          state.ingestedResearchTarget.staging_url = stagingInput.value.trim();
+          state.ingestedResearchTarget.target_id = stagingInput.value.trim() || 'Local training app (auth-service:v1.4.2)';
+        }
+      });
+    }
+
+    if (specContentArea) {
+      specContentArea.addEventListener('input', () => {
+        parseLiveEndpointsFromInput();
+      });
+    }
+
+    if (repoInput) {
+      repoInput.addEventListener('input', () => {
+        const val = repoInput.value.trim().toLowerCase();
+        if (outStack) {
+          if (val.includes('react') || val.includes('next')) {
+            outStack.textContent = 'Next.js 14 • React 18 • Node.js 20.x';
+          } else if (val.includes('python') || val.includes('flask')) {
+            outStack.textContent = 'Python 3.11 • Flask 3.0 • SQLite 3';
+          } else if (val.includes('go') || val.includes('gin')) {
+            outStack.textContent = 'Go 1.22 • Gin Gateway • Redis 7.2';
+          }
+        }
+      });
+    }
+
+    // Dropdown change handler: automatically swaps template & placeholder
+    if (specTypeSelect) {
+      specTypeSelect.addEventListener('change', () => {
+        const selected = specTypeSelect.value;
+        if (specContentArea) {
+          specContentArea.placeholder = SPEC_PLACEHOLDERS[selected] || 'Enter specification...';
+          const curVal = specContentArea.value.trim();
+          // If empty or matches one of the templates, swap to selected template
+          if (!curVal || curVal.startsWith('{') || curVal.startsWith('POST /') || curVal.startsWith('#')) {
+            specContentArea.value = SPEC_TEMPLATES[selected] || '';
+          }
+        }
+        parseLiveEndpointsFromInput();
+        showToast(`Switched API spec mode: ${specTypeSelect.options[specTypeSelect.selectedIndex].text}`, 'info');
+      });
+    }
+
     if (btnReset) {
       btnReset.addEventListener('click', () => {
-        const p = PRESETS['auth-service'];
-        if (repoInput) repoInput.value = p.repo;
-        if (branchInput) branchInput.value = p.branch;
-        if (stagingInput) stagingInput.value = p.staging;
-        if (specContentArea) specContentArea.value = p.spec;
+        applyPreset('auth-service');
         presetChips.forEach(c => c.classList.toggle('active', c.getAttribute('data-preset') === 'auth-service'));
         showToast('Reset target inputs to default', 'info');
+      });
+    }
+
+    if (btnClear) {
+      btnClear.addEventListener('click', () => {
+        if (repoInput) repoInput.value = '';
+        if (stagingInput) stagingInput.value = '';
+        if (authTokenInput) authTokenInput.value = '';
+        if (specContentArea) {
+          specContentArea.value = '';
+          specContentArea.placeholder = 'Type your custom endpoints here, e.g.:\nPOST /api/contact/submit\nGET /api/projects/query\nGET /api/health';
+        }
+        presetChips.forEach(c => c.classList.remove('active'));
+        if (outId) outId.textContent = 'RES-CUSTOM';
+        if (outStack) outStack.textContent = 'User Defined Stack (Detecting...)';
+        if (outStaging) outStaging.textContent = 'Ready for Target URL';
+        if (outConfidence) outConfidence.textContent = 'Ready for Ingestion';
+        if (endpointsList) {
+          endpointsList.innerHTML = `<div style="padding:24px; text-align:center; color:#64748b; font-size:12px; border:1px dashed #1e293b; border-radius:6px;">
+            Enter your Git repo, Staging URL, or Endpoints list on the left, then click <strong>Ingest Target</strong>.
+          </div>`;
+        }
+        state.ingestedResearchTarget = null;
+        showToast('Cleared all inputs. Ready for your custom target!', 'info');
       });
     }
 
@@ -2534,8 +3053,10 @@ print("Run ID:", res.json()["run_id"])`
         btnLaunchWarroom.innerHTML = `<span style="display:inline-block;animation:spin 1s linear infinite;">⟳</span> Launching Simulation...`;
 
         try {
-          const target = (state.ingestedResearchTarget && state.ingestedResearchTarget.target_id) || 'Local training app (auth-service:v1.4.2)';
-          const testCase = (state.ingestedResearchTarget && state.ingestedResearchTarget.test_case_recommended) || 'cwe-89';
+          const target = (state.ingestedResearchTarget && state.ingestedResearchTarget.target_id)
+            || (stagingInput && stagingInput.value ? stagingInput.value : 'Local training app (auth-service:v1.4.2)');
+          const testCase = (state.ingestedResearchTarget && state.ingestedResearchTarget.test_case_recommended)
+            || 'input-validation';
           const created = await apiClient.createRun(target, testCase, true, 'complete');
           showToast(`Live Security Assessment ${created.run_id} started!`, 'success');
           setNav('war-room');

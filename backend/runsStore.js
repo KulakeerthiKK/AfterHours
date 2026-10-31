@@ -3,7 +3,7 @@
 // =========================================================================
 
 const { coordinateRun, checkDuplicateSubmission, STAGE_ORDER } = require('./coordinator');
-const { PREDEFINED_TEST_CASES, isAllowlistedTarget } = require('./redAgent');
+const { PREDEFINED_TEST_CASES, isAllowlistedTarget, normalizeTestCase } = require('./redAgent');
 const { generateAuditReport } = require('./reportGenerator');
 
 class RunsStore {
@@ -149,12 +149,13 @@ class RunsStore {
       return {
         valid: false,
         error: 'Unauthorized target',
-        message: `Target '${target_id || ''}' is not permitted. Only authorized local training application fixtures are permitted.`
+        message: `Target '${target_id || ''}' is not permitted. Please specify an authorized target fixture or staging environment.`
       };
     }
 
-    // Check test case validity
-    if (test_case && !PREDEFINED_TEST_CASES[test_case]) {
+    // Check test case validity (with alias normalization)
+    const normalizedCase = normalizeTestCase(test_case);
+    if (test_case && !PREDEFINED_TEST_CASES[normalizedCase]) {
       return {
         valid: false,
         error: 'Unsupported test case',
@@ -163,7 +164,7 @@ class RunsStore {
     }
 
     // Deduplication check
-    if (checkDuplicateSubmission(target_id, test_case)) {
+    if (checkDuplicateSubmission(target_id, normalizedCase)) {
       return {
         valid: false,
         error: 'Duplicate run suppressed',
@@ -176,12 +177,17 @@ class RunsStore {
 
   createRun({ target_id, test_case, scope_confirmed, simulation_outcome }) {
     const run_id = `RUN-${this.counter++}`;
-    const testCaseKey = PREDEFINED_TEST_CASES[test_case] ? test_case : 'input-validation';
-    const testSpec = PREDEFINED_TEST_CASES[testCaseKey];
+    const testCaseKey = normalizeTestCase(test_case);
+    const testSpec = PREDEFINED_TEST_CASES[testCaseKey] || PREDEFINED_TEST_CASES['input-validation'];
 
     const outcome = simulation_outcome === 'needs_review' || simulation_outcome === 'failed'
       ? simulation_outcome
       : 'complete';
+
+    // Format target display nicely if custom staging was submitted
+    const displayTarget = (target_id && (target_id.startsWith('http://') || target_id.startsWith('https://')))
+      ? `${target_id} [Sandbox SEC-LOCAL-8080]`
+      : target_id;
 
     const stage_statuses = {};
     STAGE_ORDER.forEach((stageId, idx) => {
@@ -201,7 +207,7 @@ class RunsStore {
     const now = Date.now();
     const runObj = {
       run_id,
-      target_id,
+      target_id: displayTarget || target_id,
       test_case: testCaseKey,
       test_name: testSpec.title,
       status: 'running',
@@ -217,8 +223,11 @@ class RunsStore {
       mock_results: {
         finding: null,
         proposed_fix: null,
-        regression: null
+        regression: null,
+        regression_test_harness: null
       },
+      target_talkback_events: [],
+      regression_test_harness: null,
       logs: [
         `[${new Date().toLocaleTimeString()}] [System] Scope authorization confirmed for ${target_id}.`,
         `[${new Date().toLocaleTimeString()}] [Coordinator] Launching 5-stage workflow for test probe: ${testSpec.title}.`

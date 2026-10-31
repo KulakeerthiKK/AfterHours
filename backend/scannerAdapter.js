@@ -95,6 +95,21 @@ const SCANNER_RULES = [
     evidence_snippet: 'AUTH_SECRET_KEY = "demo_token_cwe798_9a8f7c6e5d4b3a2f1e0d9c8b7a6f5e4d"',
     reproduction_steps: 'Static scan detected hardcoded API secret token in static configuration',
     remediation_summary: 'Remove hardcoded secret from repository; load from environment variables and rotate compromised key.'
+  },
+  {
+    rule_id: 'aegis.multi-stage.chained-disclosure-privesc',
+    cwe: 'CWE-200 + CWE-287',
+    title: 'Chained Multi-Stage Exploit: Info Disclosure to Root Account Takeover (CWE-200 + CWE-287)',
+    severity: 'CRITICAL',
+    source_tool: 'AEGIS-ChainedAnalysisEngine',
+    asset: 'GET /api/v1/system/debug-env chained into POST /api/v1/session/restore',
+    file_path: 'backend/services/debug_service.js & gateway/middleware/session_restorer.go',
+    line_start: 28,
+    line_end: 54,
+    confidence_basis: 'Multi-stage correlation engine detected that debug endpoint disclosures can be leveraged to forge administrative session tokens on session restore.',
+    evidence_snippet: 'Stage 1: Leaks APP_INTERNAL_HMAC_SALT\nStage 2: Accepts forged X-Session-Signature generated from salt',
+    reproduction_steps: 'Query debug-env to obtain internal HMAC salt, compute SHA256 HMAC for root_admin, and submit to session/restore',
+    remediation_summary: 'Sanitize debug environment disclosure and enforce dynamic nonce verification on session restore.'
   }
 ];
 
