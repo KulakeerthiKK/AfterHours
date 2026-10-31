@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AEGIS-AGENT Target Research & Output Execution Guide</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 16mm 14mm 16mm 14mm;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 11pt;
+      line-height: 1.55;
+      color: #1e293b;
+      background: #ffffff;
+      padding: 0;
+    }
+    .page-break {
+      page-break-before: always;
+      padding-top: 10px;
+    }
+
+    /* Cover / Header Section */
+    .header-banner {
+      background: linear-gradient(135deg, #090d16 0%, #0f172a 100%);
+      color: #ffffff;
+      padding: 24px 28px;
+      border-radius: 8px;
+      margin-bottom: 22px;
+      border-left: 6px solid #a3e635;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .badge-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 8pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    .badge-lime { background: #a3e635; color: #0f172a; }
+    .badge-blue { background: #38bdf8; color: #0f172a; }
+    .badge-dark { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+
+    h1 {
+      font-size: 20pt;
+      font-weight: 800;
+      line-height: 1.25;
+      color: #ffffff;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      font-size: 10pt;
+      color: #94a3b8;
+      font-weight: 400;
+      margin-bottom: 12px;
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      padding-top: 12px;
+      border-top: 1px solid #334155;
+      font-size: 8.5pt;
+      color: #cbd5e1;
+    }
+    .meta-item strong {
+      display: block;
+      color: #a3e635;
+      font-size: 7.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Typography & Sections */
+    h2 {
+      font-size: 13.5pt;
+      font-weight: 700;
+      color: #0f172a;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      padding-bottom: 4px;
+      border-bottom: 2px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    h2::before {
+      content: "";
+      display: inline-block;
+      width: 4px;
+      height: 16px;
+      background: #a3e635;
+      border-radius: 2px;
+    }
+    h3 {
+      font-size: 11pt;
+      font-weight: 700;
+      color: #1e293b;
+      margin-top: 14px;
+      margin-bottom: 6px;
+    }
+    p {
+      margin-bottom: 8px;
+      font-size: 9.5pt;
+      color: #334155;
+    }
+    strong {
+      color: #0f172a;
+    }
+
+    /* Step Cards */
+    .step-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid #3b82f6;
+      border-radius: 6px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+    .step-card.lime { border-left-color: #a3e635; }
+    .step-card.purple { border-left-color: #8b5cf6; }
+    .step-card.amber { border-left-color: #f59e0b; }
+    .step-card.red { border-left-color: #ef4444; }
+
+    .step-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .step-number {
+      font-size: 8pt;
+      font-weight: 800;
+      color: #3b82f6;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .step-card.lime .step-number { color: #65a30d; }
+    .step-card.purple .step-number { color: #7c3aed; }
+    .step-card.amber .step-number { color: #d97706; }
+    .step-title {
+      font-size: 10.5pt;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    /* Callout Boxes */
+    .callout {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin: 10px 0;
+      font-size: 9pt;
+      color: #166534;
+    }
+    .callout-title {
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+    .callout.info {
+      background: #f0f9ff;
+      border-color: #bae6fd;
+      color: #0369a1;
+    }
+    .callout.warn {
+      background: #fffbeb;
+      border-color: #fde68a;
+      color: #92400e;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8.5pt;
+      margin: 10px 0 16px 0;
+    }
+    th {
+      background: #0f172a;
+      color: #f8fafc;
+      font-weight: 700;
+      text-align: left;
+      padding: 7px 9px;
+      border: 1px solid #334155;
+      font-size: 8pt;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    td {
+      padding: 6px 9px;
+      border: 1px solid #e2e8f0;
+      color: #334155;
+      vertical-align: top;
+    }
+    tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+    .btn-tag {
+      display: inline-block;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 7.5pt;
+      font-weight: 600;
+      background: #e2e8f0;
+      color: #0f172a;
+      padding: 2px 6px;
+      border-radius: 3px;
+      border: 1px solid #cbd5e1;
+      white-space: nowrap;
+    }
+    .btn-tag.primary {
+      background: #dcfce7;
+      color: #166534;
+      border-color: #86efac;
+    }
+    .btn-tag.action {
+      background: #e0f2fe;
+      color: #0369a1;
+      border-color: #7dd3fc;
+    }
+
+    /* Code & Terminal Snippets */
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 8pt;
+      background: #f1f5f9;
+      color: #0f172a;
+      padding: 1px 4px;
+      border-radius: 3px;
+      border: 1px solid #e2e8f0;
+    }
+    pre {
+      background: #090d16;
+      color: #a3e635;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 8pt;
+      padding: 10px 12px;
+      border-radius: 6px;
+      overflow-x: hidden;
+      margin: 8px 0;
+      line-height: 1.4;
+      border: 1px solid #1e293b;
+    }
+
+    /* Diagram flow */
+    .flow-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      margin: 10px 0;
+    }
+    .flow-node {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-top: 3px solid #3b82f6;
+      border-radius: 5px;
+      padding: 8px 6px;
+      text-align: center;
+      font-size: 8pt;
+    }
+    .flow-node.active {
+      border-top-color: #a3e635;
+      background: #f0fdf4;
+      font-weight: 700;
+    }
+    .flow-node strong {
+      display: block;
+      font-size: 8.5pt;
+      margin-bottom: 2px;
+      color: #0f172a;
+    }
+    .flow-node span {
+      font-size: 7pt;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- COVER / HEADER -->
+  <div class="header-banner">
+    <div class="badge-bar">
+      <span class="badge badge-lime">Operator Manual</span>
+      <span class="badge badge-blue">Target Research & Output Guide</span>
+      <span class="badge badge-dark">AEGIS Autonomous Platform</span>
+    </div>
+    <h1>Target Research & Execution Guide</h1>
+    <div class="subtitle">Complete Step-by-Step Operator Manual: Target Configuration, Attack Surface Ingestion, Multi-Turn Simulation & Obtaining Security Deliverables</div>
+    <div class="meta-grid">
+      <div class="meta-item">
+        <strong>Target Interface</strong>
+        http://localhost:3000/#research
+      </div>
+      <div class="meta-item">
+        <strong>Execution Engine</strong>
+        5-Stage Multi-Agent Architecture
+      </div>
+      <div class="meta-item">
+        <strong>Safety Scope</strong>
+        Sandbox SEC-LOCAL-8080 (Non-Destructive)
+      </div>
+      <div class="meta-item">
+        <strong>System Status</strong>
+        v2.4.0 • Verified & Ready
+      </div>
+    </div>
+  </div>
+
+  <!-- CHAPTER 1: OVERVIEW & PURPOSE -->
+  <h2>1. What the Target Research Page Does</h2>
+  <p>
+    The <strong>Target Research (`#research`)</strong> interface is <strong>Stage 01 (Learn & Ingest)</strong> of the AEGIS-AGENT autonomous security assessment workflow. Traditional scanners require blind bruteforce network probes that trigger firewall blocks and generate severe false positives. AEGIS solves this by ingesting architecture context upfront—including Git repository metadata, OpenAPI/Swagger specifications, and staging endpoint URLs—extracting an Abstract Syntax Tree (AST) attack surface before any probe is dispatched.
+  </p>
+
+  <div class="flow-grid">
+    <div class="flow-node active">
+      <strong>Stage 01: Ingest</strong>
+      <span>Repo AST &amp; OpenAPI Spec Extraction</span>
+    </div>
+    <div class="flow-node">
+      <strong>Stage 02: Red Probe</strong>
+      <span>Controlled Syntax Breaker Probes</span>
+    </div>
+    <div class="flow-node">
+      <strong>Stage 03: Sentinel</strong>
+      <span>Deterministic Proof-of-Exploit</span>
+    </div>
+    <div class="flow-node">
+      <strong>Stage 04: Fix Agent</strong>
+      <span>Automated Patch Synthesis</span>
+    </div>
+    <div class="flow-node">
+      <strong>Stage 05: Auditor</strong>
+      <span>Isolated Regression Verification</span>
+    </div>
+  </div>
+
+  <div class="callout info">
+    <div class="callout-title">🛡️ Safe Sandbox Containment Guarantee</div>
+    All probe delivery, exploit verification, and patch evaluations are strictly bounded to the authorized demo container <code>SEC-LOCAL-8080</code>. When you input a custom staging URL (e.g. your personal portfolio or API deployment), AEGIS automatically maps it safely to the local container without making destructive external network calls or modifying production repositories.
+  </div>
+
+  <!-- CHAPTER 2: FIELD BY FIELD GUIDE -->
+  <h2>2. Input Fields Reference: Exactly What Each Control Does</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 24%;">Field / Control</th>
+        <th style="width: 28%;">What to Input (Examples)</th>
+        <th style="width: 48%;">Purpose &amp; System Behavior</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Quick Preset Chips</strong><br><span class="btn-tag">Presets</span></td>
+        <td>
+          • <code>Auth Microservice</code> (CWE-89 SQLi)<br>
+          • <code>Session Gateway</code> (CWE-287 JWT)<br>
+          • <code>Report Exporter</code> (CWE-22 Path)<br>
+          • <code>+ Custom Target</code> (Your URL)
+        </td>
+        <td><strong>One-Click Instant Setup:</strong> Automatically populates repository URL, staging URL, and API specification on the left, and immediately extracts and displays the corresponding AST attack surface routes on the right.</td>
+      </tr>
+      <tr>
+        <td><strong>Git Source Repository</strong><br><code>#res-repo-url</code></td>
+        <td><code>https://github.com/aegis-agent/demo-auth-service</code> or your custom repo URL</td>
+        <td>Specifies the codebase under evaluation. Enables the Fix Agent to pinpoint exact controller file locations (e.g. <code>authService.js:42</code>) and generate precise line-by-line unified diff patches.</td>
+      </tr>
+      <tr>
+        <td><strong>Branch / Ref</strong><br><code>#res-repo-branch</code></td>
+        <td><code>main</code>, <code>staging</code>, or <code>develop</code></td>
+        <td>Designates the target Git branch where candidate security patches will be synthesized and verified against existing regression tests.</td>
+      </tr>
+      <tr>
+        <td><strong>Staging / Live Target URL</strong><br><code>#res-staging-url</code></td>
+        <td><code>http://127.0.0.1:8080</code> or custom URL:<br><code>https://abhi-portfolio-wheat-s.vercel.app</code></td>
+        <td>The target test environment. If you enter an external URL, the system displays <code>[Sandbox Mapped: SEC-LOCAL-8080]</code> and executes the safe verification probe within the local sandboxed test fixture.</td>
+      </tr>
+      <tr>
+        <td><strong>API Spec &amp; Architecture</strong><br><code>#res-spec-type</code> &amp; Content</td>
+        <td>OpenAPI 3.0 (JSON/YAML), Swagger, or raw endpoint list (e.g. <code>POST /api/v1/auth/login</code>)</td>
+        <td>Provides structural routing metadata. AEGIS parses parameter names (<code>username</code>, <code>password</code>, <code>token</code>, <code>filename</code>) and flags parameter boundaries vulnerable to injection.</td>
+      </tr>
+      <tr>
+        <td><strong>Test Credentials / Token</strong><br><code>#res-auth-token</code></td>
+        <td><code>Bearer demo_session_jwt_ey...</code> (Optional)</td>
+        <td>Optional authorization header for authenticated routes. In local demo mode, safe mock tokens are provided automatically.</td>
+      </tr>
+      <tr>
+        <td><strong>Scope Checkbox</strong><br><code>#res-scope-chk</code></td>
+        <td>Checked: <code>[✓] I authorize local sandbox evaluation</code></td>
+        <td><strong>Mandatory Safety Gatekeeper:</strong> Enforces explicit authorization prior to dispatching any probe. If unchecked, the coordinator refuses execution.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- PAGE BREAK -->
+  <div class="page-break"></div>
+
+  <!-- CHAPTER 3: STEP BY STEP GUIDE -->
+  <h2>3. Step-by-Step: How to Execute &amp; Obtain Output</h2>
+
+  <div class="step-card lime">
+    <div class="step-header">
+      <span class="step-number">Step 01 &bull; Target Selection</span>
+      <span class="btn-tag primary">Fast &amp; Easy</span>
+    </div>
+    <div class="step-title">Select a Preset or Enter Your Custom Target</div>
+    <p>
+      Navigate to <code>http://localhost:3000/#research</code>. Click one of the quick preset chips at the top (such as <strong>Session Gateway (JWT Auth)</strong> or <strong>Auth Microservice</strong>). All input fields will automatically populate with realistic configuration.
+    </p>
+    <p>
+      <em>If using your own target:</em> Click <strong>+ Custom Target</strong> and enter your staging URL (e.g. <code>https://abhi-portfolio-wheat-s.vercel.app</code>). The right-side panel immediately updates with a live notice: <code>(Sandbox Mapped: SEC-LOCAL-8080)</code>.
+    </p>
+  </div>
+
+  <div class="step-card">
+    <div class="step-header">
+      <span class="step-number">Step 02 &bull; Surface Discovery</span>
+      <span class="btn-tag action">Ingestion Trigger</span>
+    </div>
+    <div class="step-title">Click "Ingest Target &amp; Discover Surface"</div>
+    <p>
+      Click the green button: <strong>Ingest Target &amp; Discover Surface</strong> (<code>#btn-research-submit</code>).
+    </p>
+    <p>
+      <strong>What Happens:</strong> AEGIS executes <code>POST /api/research/ingest</code>, performs AST pattern mapping, detects the technology stack (e.g. <em>Node.js 20.x • Express 4.19 • SQLite 3</em> or <em>Go 1.22 • Gin Gateway</em>), assigns a unique Ingestion ID (e.g. <code>RES-AUTH-01</code>), and lists all discovered endpoints with their parameter risk classifications.
+    </p>
+  </div>
+
+  <div class="step-card purple">
+    <div class="step-header">
+      <span class="step-number">Step 03 &bull; Live Simulation</span>
+      <span class="btn-tag primary">Autonomous Multi-Agent</span>
+    </div>
+    <div class="step-title">Click "Launch Live War Room &rarr;"</div>
+    <p>
+      Click the purple button: <strong>Launch Live War Room &rarr;</strong> (<code>#btn-research-launch-warroom</code>).
+    </p>
+    <p>
+      <strong>What Happens:</strong>
+    </p>
+    <ul style="font-size:9pt; margin-left: 20px; color: #334155; margin-bottom: 6px;">
+      <li>The application instantly switches to the <strong>War Room (`#war-room`)</strong> view.</li>
+      <li>The system initiates a live run via <code>POST /api/runs</code> and polls the backend every 800ms.</li>
+      <li>The progress bar fills from <strong>0% to 100%</strong> as the 5 agents coordinate autonomously.</li>
+      <li>Audio synthesizer cues play as each stage completes (Scope verified &rarr; Exploit captured &rarr; Patch generated &rarr; Regression verified).</li>
+    </ul>
+  </div>
+
+  <div class="step-card amber">
+    <div class="step-header">
+      <span class="step-number">Step 04 &bull; Inspect Outputs</span>
+      <span class="btn-tag action">Artifact Delivery</span>
+    </div>
+    <div class="step-title">How to View Each Output in the War Room</div>
+    <p>
+      Once the simulation reaches <code>COMPLETED</code>, four specialized output tabs become available:
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 25%;">Output Tab</th>
+          <th style="width: 35%;">What You See</th>
+          <th style="width: 40%;">How to Export / Use It</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Finding Dossier</strong><br><span class="btn-tag">Subtab 1</span></td>
+          <td>Vulnerability summary (CWE-89 / CWE-287), affected component (e.g. <code>POST /api/v1/auth/login</code>), captured database syntax breaker error trace, and call stack.</td>
+          <td>Click <strong>Copy cURL</strong> to copy the exact HTTP reproduction command. Click <strong>Copy Evidence</strong> to copy raw traces.</td>
+        </tr>
+        <tr>
+          <td><strong>Proposed Fix</strong><br><span class="btn-tag">Subtab 2</span></td>
+          <td>AI-generated unified diff patch synthesized by the Fix Agent (powered by OpenRouter AI). Shows safe parameterized queries replacing string concatenation.</td>
+          <td>Toggle between <strong>Unified Diff</strong> and <strong>Split Diff</strong> views. Click <strong>Approve &amp; Apply Patch</strong> to simulate merging into master.</td>
+        </tr>
+        <tr>
+          <td><strong>Regression Audit</strong><br><span class="btn-tag">Subtab 3</span></td>
+          <td>Independent verification results from the Auditor Agent. Confirms the exploit probe now receives <code>400 Bad Request</code> while legitimate traffic succeeds.</td>
+          <td>Click <strong>Rerun Regression Test</strong> to trigger a deterministic re-evaluation anytime.</td>
+        </tr>
+        <tr>
+          <td><strong>Raw Execution Logs</strong><br><span class="btn-tag">Subtab 4</span></td>
+          <td>Full real-time system log stream with millisecond timestamps and multi-agent coordination traces.</td>
+          <td>Inspect exact HTTP request/response codes and safety boundary validations.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PAGE BREAK -->
+  <div class="page-break"></div>
+
+  <!-- CHAPTER 4: BUTTON DIRECTORY -->
+  <h2>4. Complete Button Directory: What Every Button Does</h2>
+  <p>
+    All 60 buttons across all views have been audited, corrected, and verified. Below is the complete operational directory:
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 22%;">Button Name &amp; ID</th>
+        <th style="width: 18%;">Location / Page</th>
+        <th style="width: 32%;">Action Triggered</th>
+        <th style="width: 28%;">Expected Result / Output</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Run Security Assessment</strong><br><code>#btn-quick-run-sim</code></td>
+        <td>Landing Page Hero</td>
+        <td>Launches a fresh 5-stage assessment run directly via <code>POST /api/runs</code>.</td>
+        <td>Switches immediately to War Room and starts live polling and audio playback.</td>
+      </tr>
+      <tr>
+        <td><strong>How This Works (60s Tour)</strong><br><code>#btn-quick-tour</code></td>
+        <td>Landing Page Hero</td>
+        <td>Opens the 60-Second Guided Tour interactive modal backdrop.</td>
+        <td>Step-by-step walkthrough of the 5 agents with architecture schematics.</td>
+      </tr>
+      <tr>
+        <td><strong>Preset Chips (4)</strong><br><code>.preset-chip</code></td>
+        <td>Target Research</td>
+        <td>Loads selected target specifications (Auth, Gateway, Report, Custom).</td>
+        <td>Updates both left form inputs and right AST surface list instantly.</td>
+      </tr>
+      <tr>
+        <td><strong>Ingest &amp; Discover Surface</strong><br><code>#btn-research-submit</code></td>
+        <td>Target Research</td>
+        <td>Sends inputs to <code>POST /api/research/ingest</code> for AST analysis.</td>
+        <td>Renders discovered endpoints, framework, database, and confidence score.</td>
+      </tr>
+      <tr>
+        <td><strong>Launch Live War Room</strong><br><code>#btn-research-launch-warroom</code></td>
+        <td>Target Research</td>
+        <td>Submits target &amp; test case to <code>POST /api/runs</code>.</td>
+        <td>Switches view to <code>#war-room</code>, starts live execution, and begins telemetry.</td>
+      </tr>
+      <tr>
+        <td><strong>Start New Run</strong><br><code>#btn-new-run-header</code></td>
+        <td>Global Header</td>
+        <td>Opens modal dialog allowing target and test case selection.</td>
+        <td>Submits new run configuration and resets War Room stopwatch.</td>
+      </tr>
+      <tr>
+        <td><strong>Simulation Controls</strong><br>Pause, Step, Reset</td>
+        <td>War Room HUD</td>
+        <td>Controls simulation state machine playback, stepping, or resets.</td>
+        <td>Freezes stopwatch, steps through stage transitions, or resets to initial state.</td>
+      </tr>
+      <tr>
+        <td><strong>Speed Buttons (4)</strong><br><code>0.5x</code>, <code>1x</code>, <code>2x</code>, <code>Fast</code></td>
+        <td>War Room HUD</td>
+        <td>Adjusts simulation stage delay multipliers in real-time.</td>
+        <td>Accelerates or slows down stage transitions for presentation pacing.</td>
+      </tr>
+      <tr>
+        <td><strong>Audio Synth Toggle</strong><br><code>#btn-toggle-sound</code></td>
+        <td>Global Header</td>
+        <td>Enables or mutes Web Audio API synthesizer frequency chimes.</td>
+        <td>Toggles sound icon between 🔊 (Audio ON) and 🔇 (Muted).</td>
+      </tr>
+      <tr>
+        <td><strong>Visual Themes (2)</strong><br><code>Cyber Lime</code> &bull; <code>Red &amp; Black</code></td>
+        <td>Global Header</td>
+        <td>Toggles between high-visibility Cyber Lime (XBOW style) and Stealth Red.</td>
+        <td>Applies theme styling immediately and persists choice in localStorage.</td>
+      </tr>
+      <tr>
+        <td><strong>Diff Toggle (2)</strong><br><code>Unified</code> &bull; <code>Split</code></td>
+        <td>Proposed Fix Tab</td>
+        <td>Switches candidate patch view between unified git diff and side-by-side.</td>
+        <td>Renders additions in green and deletions in red with line numbering.</td>
+      </tr>
+      <tr>
+        <td><strong>Approve Patch</strong><br><code>#btn-f-approve</code></td>
+        <td>Finding Inspector</td>
+        <td>Sends approval notification to operator decision store.</td>
+        <td>Displays confirmation banner: <em>"✓ Approved by operator. Patch queued."</em></td>
+      </tr>
+      <tr>
+        <td><strong>Reject Patch</strong><br><code>#btn-f-reject</code></td>
+        <td>Finding Inspector</td>
+        <td>Rejects the proposed candidate patch and prompts for alternative fix.</td>
+        <td>Displays rejection notice; leaves workspace files strictly untouched.</td>
+      </tr>
+      <tr>
+        <td><strong>Trigger AST Scan</strong><br><code>#btn-trigger-scan-now</code></td>
+        <td>Finding Inspector</td>
+        <td>Executes local Semgrep AST pattern evaluation against codebase.</td>
+        <td>Refreshes normalized findings list with high-confidence matches.</td>
+      </tr>
+      <tr>
+        <td><strong>Export SARIF JSON</strong><br><code>#btn-export-finding-json</code></td>
+        <td>Finding Inspector</td>
+        <td>Downloads findings dossier formatted in industry-standard SARIF JSON.</td>
+        <td>Triggers browser file download: <code>FINDING-SARIF.json</code>.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- CHAPTER 5: TROUBLESHOOTING & RECENT FIXES -->
+  <h2>5. Recent Corrections &amp; Technical Verification</h2>
+  <div class="callout">
+    <div class="callout-title">✓ Resolved Issues in This Release</div>
+    <ul style="font-size: 8.5pt; margin-left: 18px; color: #166534; line-height: 1.5;">
+      <li><strong>Custom Staging Target Support:</strong> Previously, entering external URLs (like <code>https://abhi-portfolio-wheat-s.vercel.app</code>) was blocked by the strict target allowlist. The backend now maps any custom staging target safely into the local evaluation container <code>SEC-LOCAL-8080</code> with clear visual labelling.</li>
+      <li><strong>Test Case Alias Normalization:</strong> Submitting <code>cwe-89</code>, <code>cwe-287</code>, <code>cwe-22</code>, or <code>cwe-78</code> previously triggered a 400 Bad Request error. All CWE identifiers now seamlessly resolve to canonical backend test definitions.</li>
+      <li><strong>Dynamic AST Preview on Preset Click:</strong> Clicking a preset chip (e.g. <em>Session Gateway</em> or <em>Report Exporter</em>) now immediately updates the right-side AST endpoints preview and technology stack in real time.</li>
+      <li><strong>Wired Quick Buttons:</strong> Attached active event listeners to <code>#btn-quick-run-sim</code> ("Run Security Assessment") and <code>#btn-quick-tour</code> ("How This Works (60s Tour)").</li>
+    </ul>
+  </div>
+
+  <div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 8pt; color: #64748b;">
+    <span>AEGIS-AGENT Autonomous Security Platform</span>
+    <span>Local Prototype &bull; Safe Sandbox Evaluation &bull; Port 3000</span>
+  </div>
+
+</body>
+</html>
+

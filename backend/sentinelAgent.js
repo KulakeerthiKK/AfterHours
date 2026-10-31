@@ -111,6 +111,19 @@ function reviewEvidence({ finding, test_case, forced_outcome }) {
       }
       break;
 
+    case 'chained-bugs':
+      // Look for multi-stage compounding signature: debug secret harvest + session supervisor grant
+      if (
+        (http_response && (http_response.includes('APP_INTERNAL_HMAC_SALT') || http_response.includes('root_supervisor') || http_response.includes('ROOT_BYPASS_TOKEN_ACTIVE'))) ||
+        (captured_trace && captured_trace.includes('Multi-Hop Chained Exploit Trace'))
+      ) {
+        signatureVerified = true;
+        indicators.push('Step 1 info disclosure: Internal HMAC salt extracted from debug environment');
+        indicators.push('Step 2 privilege escalation: Forged administrative session signature accepted');
+        indicators.push('Compound multi-hop breach verified: 1 + 1 = 10 (CRITICAL exploit path)');
+      }
+      break;
+
     default:
       signatureVerified = false;
   }

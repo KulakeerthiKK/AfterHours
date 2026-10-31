@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AEGIS-AGENT — Complete Project Overview & Architectural Specification</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 14mm 12mm 14mm 12mm;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 9.5pt;
+      line-height: 1.5;
+      color: #1e293b;
+      background: #ffffff;
+    }
+    .page-break {
+      page-break-before: always;
+      padding-top: 8px;
+    }
+
+    /* Cover / Header */
+    .header-banner {
+      background: linear-gradient(135deg, #050811 0%, #0c1322 100%);
+      color: #ffffff;
+      padding: 22px 24px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      border-left: 6px solid #a3e635;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.2);
+    }
+    .badge-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .badge {
+      display: inline-block;
+      font-size: 7.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 2px 7px;
+      border-radius: 3px;
+    }
+    .badge-lime { background: #a3e635; color: #020708; }
+    .badge-blue { background: #38bdf8; color: #0c1322; }
+    .badge-purple { background: #c084fc; color: #0c1322; }
+    .badge-dark { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+
+    h1 {
+      font-size: 18pt;
+      font-weight: 800;
+      line-height: 1.2;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      font-size: 9.5pt;
+      color: #94a3b8;
+      font-weight: 400;
+      margin-bottom: 12px;
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      padding-top: 10px;
+      border-top: 1px solid #243247;
+      font-size: 8pt;
+      color: #cbd5e1;
+    }
+    .meta-item strong {
+      display: block;
+      color: #a3e635;
+      font-size: 7pt;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Headings */
+    h2 {
+      font-size: 12.5pt;
+      font-weight: 700;
+      color: #0f172a;
+      margin-top: 16px;
+      margin-bottom: 8px;
+      padding-bottom: 3px;
+      border-bottom: 2px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    h2::before {
+      content: "";
+      display: inline-block;
+      width: 4px;
+      height: 14px;
+      background: #a3e635;
+      border-radius: 2px;
+    }
+    h3 {
+      font-size: 10pt;
+      font-weight: 700;
+      color: #1e293b;
+      margin-top: 10px;
+      margin-bottom: 4px;
+    }
+    p {
+      margin-bottom: 6px;
+      font-size: 9pt;
+      color: #334155;
+    }
+    ul, ol {
+      margin-left: 18px;
+      margin-bottom: 8px;
+      font-size: 8.5pt;
+      color: #334155;
+    }
+    li {
+      margin-bottom: 3px;
+    }
+    strong {
+      color: #0f172a;
+    }
+
+    /* Cards */
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+    }
+    .card.highlight {
+      border-left: 4px solid #a3e635;
+    }
+    .card.blue {
+      border-left: 4px solid #3b82f6;
+    }
+    .card.purple {
+      border-left: 4px solid #8b5cf6;
+    }
+
+    /* Callouts */
+    .callout {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin: 8px 0;
+      font-size: 8.5pt;
+      color: #166534;
+    }
+    .callout.info {
+      background: #f0f9ff;
+      border-color: #bae6fd;
+      color: #0369a1;
+    }
+    .callout.warn {
+      background: #fffbeb;
+      border-color: #fde68a;
+      color: #92400e;
+    }
+    .callout-title {
+      font-weight: 700;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8pt;
+      margin: 6px 0 12px 0;
+    }
+    th {
+      background: #0f172a;
+      color: #f8fafc;
+      font-weight: 700;
+      text-align: left;
+      padding: 6px 8px;
+      border: 1px solid #334155;
+      font-size: 7.5pt;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    td {
+      padding: 5px 8px;
+      border: 1px solid #e2e8f0;
+      color: #334155;
+      vertical-align: top;
+    }
+    tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+
+    .tag {
+      display: inline-block;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 7pt;
+      font-weight: 600;
+      background: #e2e8f0;
+      color: #0f172a;
+      padding: 1px 5px;
+      border-radius: 3px;
+      border: 1px solid #cbd5e1;
+      white-space: nowrap;
+    }
+    .tag.green { background: #dcfce7; color: #166534; border-color: #86efac; }
+    .tag.blue { background: #e0f2fe; color: #0369a1; border-color: #7dd3fc; }
+    .tag.red { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+
+    /* Code block */
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 7.5pt;
+      background: #f1f5f9;
+      color: #0f172a;
+      padding: 1px 4px;
+      border-radius: 3px;
+      border: 1px solid #e2e8f0;
+    }
+    pre {
+      background: #090d16;
+      color: #a3e635;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 7.5pt;
+      padding: 8px 10px;
+      border-radius: 5px;
+      margin: 6px 0;
+      line-height: 1.35;
+      border: 1px solid #1e293b;
+    }
+
+    /* Pipeline Diagram */
+    .pipeline-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 5px;
+      margin: 8px 0;
+    }
+    .pipe-node {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-top: 3px solid #3b82f6;
+      border-radius: 4px;
+      padding: 6px 4px;
+      text-align: center;
+      font-size: 7.5pt;
+    }
+    .pipe-node.active {
+      border-top-color: #a3e635;
+      background: #f0fdf4;
+      font-weight: 700;
+    }
+    .pipe-node strong {
+      display: block;
+      font-size: 8pt;
+      color: #0f172a;
+      margin-bottom: 2px;
+    }
+    .pipe-node span {
+      font-size: 6.5pt;
+      color: #64748b;
+      display: block;
+    }
+
+    /* 2-column grid */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 6px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- COVER BANNER -->
+  <div class="header-banner">
+    <div class="badge-bar">
+      <span class="badge badge-lime">Complete Project Overview</span>
+      <span class="badge badge-blue">Architectural Specification</span>
+      <span class="badge badge-purple">Multi-Agent SecOps</span>
+      <span class="badge badge-dark">Zero-Dependency</span>
+    </div>
+    <h1>AEGIS-AGENT — Autonomous Security Operations Platform</h1>
+    <div class="subtitle">Complete Technical Blueprint, Architecture Deep-Dive, Multi-Agent Pipeline, View-by-View Walkthrough, and Operator Execution Manual</div>
+    <div class="meta-grid">
+      <div class="meta-item">
+        <strong>Repository URL</strong>
+        github.com/KulakeerthiKK/AfterHours
+      </div>
+      <div class="meta-item">
+        <strong>Runtime Stack</strong>
+        Zero-Dependency Node.js + SQLite / PostgreSQL
+      </div>
+      <div class="meta-item">
+        <strong>AI Integration</strong>
+        OpenRouter AI (DeepSeek / Claude / Gemini)
+      </div>
+      <div class="meta-item">
+        <strong>Safety Scope</strong>
+        SEC-LOCAL-8080 (Non-Destructive Sandbox)
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 1: EXECUTIVE SUMMARY -->
+  <h2>1. Executive Summary &amp; The Problem Space</h2>
+  <p>
+    Modern application security faces a severe scalability bottleneck. Traditional <strong>Static Application Security Testing (SAST)</strong> tools generate high volumes of false positives without contextual understanding, while <strong>Dynamic Application Security Testing (DAST)</strong> tools perform blind network fuzzing that triggers firewall rate-limits and lacks source-code awareness. More critically, neither paradigm writes, tests, or verifies code patches—forcing engineering teams into manual triage, alert fatigue, and protracted remediation cycles that average <strong>45+ days per vulnerability</strong>.
+  </p>
+  <p>
+    <strong>AEGIS-AGENT</strong> solves this by introducing a closed-loop, autonomous multi-agent platform inspired by modern autonomous security engineering (such as XBOW), pairing high-contrast visual war room telemetry with rigorous mathematical and deterministic verification bounds:
+  </p>
+  <div class="two-col">
+    <div class="card highlight">
+      <strong>Core Autonomous Capabilities:</strong>
+      <ul>
+        <li><strong>Context Ingestion:</strong> Ingests Git repositories and OpenAPI 3.0 specs to extract an Abstract Syntax Tree (AST) attack surface before sending any probes.</li>
+        <li><strong>Empirical Proof-of-Exploit:</strong> Executes non-destructive, controlled syntax breaker probes against sandboxed local endpoints to prove exploitability.</li>
+        <li><strong>Automated Patch Synthesis:</strong> Fix Agent uses LLMs (via OpenRouter AI) to write minimal, production-grade unified diff patches.</li>
+        <li><strong>Dual-Check Regression Testing:</strong> Auditor Agent verifies in an isolated worktree that the exploit is neutralized while authentic application behavior remains intact.</li>
+      </ul>
+    </div>
+    <div class="card blue">
+      <strong>Zero-Risk Safety Governance:</strong>
+      <ul>
+        <li><strong>Strict Target Allowlisting:</strong> Rejects all arbitrary external scanning; external URLs are safely mapped to the local container <code>SEC-LOCAL-8080</code>.</li>
+        <li><strong>Human-in-the-Loop Gatekeeper:</strong> Candidate patches are synthesized in disposable worktrees and never committed, merged, or pushed without explicit operator authorization.</li>
+        <li><strong>Zero Dependencies:</strong> Co-hosts frontend SPA and backend REST API on port <code>3000</code> using native Node.js core modules.</li>
+        <li><strong>Persistent Embedded Database:</strong> Persistent storage via native SQLite (<code>node:sqlite</code>) with optional PostgreSQL pool fallback.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- SECTION 2: THE 6-STAGE PIPELINE -->
+  <h2>2. The End-to-End Autonomous Pipeline</h2>
+  <p>
+    The workflow progresses deterministically across 6 synchronized stages from discovery to remediation:
+  </p>
+
+  <div class="pipeline-grid">
+    <div class="pipe-node active">
+      <strong>01. Research</strong>
+      <span>AST &amp; OpenAPI Spec Ingestion</span>
+    </div>
+    <div class="pipe-node">
+      <strong>02. Scope Check</strong>
+      <span>Allowlist &amp; Sandbox Gatekeeper</span>
+    </div>
+    <div class="pipe-node">
+      <strong>03. Red Agent</strong>
+      <span>Empirical Probe Execution</span>
+    </div>
+    <div class="pipe-node">
+      <strong>04. Sentinel</strong>
+      <span>Proof-of-Exploit Validation</span>
+    </div>
+    <div class="pipe-node">
+      <strong>05. Fix Agent</strong>
+      <span>Unified Diff Patch Synthesis</span>
+    </div>
+    <div class="pipe-node">
+      <strong>06. Auditor</strong>
+      <span>Isolated Regression Verification</span>
+    </div>
+  </div>
+
+  <pre>
+[User Input / Presets] ──► [AST Surface Extraction] ──► [Scope Authorization Gatekeeper]
+                                                                  │
+┌─────────────────────────────────────────────────────────────────┴────────────────────────────────┐
+│ AUTONOMOUS VERIFICATION &amp; REPAIR PIPELINE                                                         │
+│                                                                                                  │
+│ 1. Red Agent: Non-destructive syntax breaker probe dispatched (e.g. ' OR '1'='1)                │
+│ 2. Target Service: Reflects raw database syntax error (sqlite3.OperationalError)                 │
+│ 3. Sentinel Agent: Confirms live exploitability signature (Removes false positive flags)         │
+│ 4. Fix Agent (AI): Synthesizes minimal parameterized query patch in isolated worktree            │
+│ 5. Auditor Agent: Tests exploit breaker (blocked with 400) &amp; legitimate login (200 OK)           │
+└─────────────────────────────────────────────────────────────────┬────────────────────────────────┘
+                                                                  ▼
+                                                   [Operator Human Approval Gate]
+                                                   (Approve &amp; Merge / Reject / Export)
+  </pre>
+
+  <!-- PAGE BREAK -->
+  <div class="page-break"></div>
+
+  <!-- SECTION 3: SYSTEM ARCHITECTURE & COMPONENTS -->
+  <h2>3. Detailed Architecture &amp; Agent Roster</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 20%;">Agent / Module</th>
+        <th style="width: 25%;">Source File</th>
+        <th style="width: 30%;">Operational Mechanics</th>
+        <th style="width: 25%;">Safety &amp; Verification Boundary</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Target Research</strong><br><span class="tag green">Stage 01</span></td>
+        <td><code>backend/routes.js</code><br><code>js/app.js</code></td>
+        <td>Parses OpenAPI specs and Git repositories, detects runtime stack (Express, Flask, Gin, Next.js), and extracts parameter attack surfaces.</td>
+        <td>Maps external staging targets (e.g. personal portfolio deployments) into local sandbox <code>SEC-LOCAL-8080</code>.</td>
+      </tr>
+      <tr>
+        <td><strong>Scope Controller</strong><br><span class="tag blue">Gatekeeper</span></td>
+        <td><code>backend/runsStore.js</code><br><code>backend/redAgent.js</code></td>
+        <td>Enforces allowlist policy prior to dispatching any request. Validates scope confirmation checkbox. Deduplicates rapid requests.</td>
+        <td>Blocks arbitrary public hosts; verifies <code>scope_confirmed === true</code> before state transition.</td>
+      </tr>
+      <tr>
+        <td><strong>Red Agent</strong><br><span class="tag red">Stage 02</span></td>
+        <td><code>backend/redAgent.js</code></td>
+        <td>Executes safe, predefined test cases:
+          <br>&bull; <code>input-validation</code> (CWE-89 SQLi)
+          <br>&bull; <code>authentication-check</code> (CWE-287 JWT)
+          <br>&bull; <code>path-traversal</code> (CWE-22 Path)
+          <br>&bull; <code>command-injection</code> (CWE-78 Cmd)
+        </td>
+        <td>Zero destructive payloads. Uses safe boundary-testing strings to capture stack traces without modifying database records.</td>
+      </tr>
+      <tr>
+        <td><strong>Sentinel Agent</strong><br><span class="tag green">Stage 03</span></td>
+        <td><code>backend/sentinelAgent.js</code></td>
+        <td>Analyzes raw HTTP response codes, error payloads, and database traces to deterministically classify exploitability (<code>CONFIRMED</code> vs <code>NEEDS_REVIEW</code>).</td>
+        <td>Filters out scanner hallucinations. Halts execution if evidence is ambiguous, preventing unnecessary code changes.</td>
+      </tr>
+      <tr>
+        <td><strong>Fix Agent &amp; AI</strong><br><span class="tag purple">Stage 04</span></td>
+        <td><code>backend/fixAgent.js</code><br><code>backend/fixAgentAdapter.js</code></td>
+        <td>Generates minimal unified diffs replacing string concatenations with parameterized bindings. Invokes OpenRouter LLM or deterministic fallback.</td>
+        <td>Isolated worktree synthesis. Never touches production files or branches without human sign-off.</td>
+      </tr>
+      <tr>
+        <td><strong>Auditor Agent</strong><br><span class="tag blue">Stage 05</span></td>
+        <td><code>backend/auditorAgent.js</code></td>
+        <td>Executes dual-check regression matrix:
+          <br>1. Security check: previous exploit payload now fails safely.
+          <br>2. Functional check: legitimate authenticated queries succeed.
+        </td>
+        <td>Deterministic independent test suite execution; records checks passed in persistent Security Memory.</td>
+      </tr>
+      <tr>
+        <td><strong>Workflow Coordinator</strong><br><span class="tag dark">State Machine</span></td>
+        <td><code>backend/coordinator.js</code></td>
+        <td>Manages asynchronous stage lifecycles, timer ticks, stage retry counters, and SSE / polling state payloads.</td>
+        <td>Coordinates graceful degradation and error handling across stages.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- SECTION 4: USER INTERFACE SITEMAP -->
+  <h2>4. User Interface Architecture &amp; Sitemap</h2>
+  <p>
+    The application is structured as a zero-latency Single Page Application (SPA) with 8 primary views:
+  </p>
+
+  <div class="two-col">
+    <div class="card">
+      <strong>1. Landing Overview (`#landing`)</strong>
+      <p>Split hero layout with animated typewriter terminal console (<code>aegis-ast-trace@local</code>), 4 KPI metric counters, one-click <strong>Run Security Assessment</strong> button, <strong>60s Guided Tour</strong> launcher, 6-stage interactive feature showcase, and multi-language API quick-starts (cURL, PowerShell, Node.js, Python).</p>
+      
+      <strong>2. Target Research &amp; Ingestion (`#research`)</strong>
+      <p>Input card for Git repository URL, branch ref, staging URL, and API spec. Features 4 quick preset chips (<em>Auth Microservice</em>, <em>Session Gateway</em>, <em>Report Exporter</em>, <em>Custom Target</em>). The right pane displays real-time AST surface extraction, detected technology stack, and parameter risk tiers.</p>
+
+      <strong>3. Security War Room (`#war-room`)</strong>
+      <p>Mission control cockpit featuring a live multi-agent network visualizer, millisecond stopwatch (<code>⏱ 00:04.2s</code>), laser progress bar (0% &rarr; 100%), speed controls (<code>0.5x</code>, <code>1x</code>, <code>2x</code>, <code>Fast</code>), simulation state toggles (Pause/Resume, Step, Reset), and audio synthesizer chimes.</p>
+    </div>
+    <div class="card">
+      <strong>4. Attack Path Visualizer (`#attackpath`)</strong>
+      <p>Interactive node-and-edge attack graph with animated dashed SVG connectors illustrating: <code>Ingress Entrypoint</code> &rarr; <code>Vulnerable Component</code> &rarr; <code>Reachable Asset Impact</code>. Includes slide-out Evidence Inspector Drawer for inspecting HTTP payloads.</p>
+
+      <strong>5. Finding Inspector (`#findingdetail`)</strong>
+      <p>Deep-dive vulnerability analyzer featuring CVSS 1.0–10.0 risk score badges, captured HTTP probe requests and response traces, local Semgrep AST scan triggers, SARIF JSON export, and operator Human-in-the-Loop decision controls (<em>Approve Patch</em>, <em>Reject Patch</em>, <em>Run Auditor Check</em>).</p>
+
+      <strong>6. Governance Dashboard &amp; Logs (`#dashboard`, `#logs`)</strong>
+      <p>Searchable historical audit log of all runs with severity filters (<em>All</em>, <em>High</em>, <em>Medium</em>, <em>Remediated</em>), persistent SQLite records, and real-time streaming system telemetry logs with colored agent tags.</p>
+    </div>
+  </div>
+
+  <!-- PAGE BREAK -->
+  <div class="page-break"></div>
+
+  <!-- SECTION 5: FOUR-PANE INVESTIGATION WORKBENCH -->
+  <h2>5. Inside the War Room: The 4-Pane Output Workbench</h2>
+  <p>
+    When a security assessment completes in the War Room, the bottom cockpit activates four detail panes:
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 22%;">Workbench Pane</th>
+        <th style="width: 38%;">Displayed Data &amp; Evidence</th>
+        <th style="width: 40%;">Operator Actions &amp; Deliverables</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Pane 1: Finding Dossier</strong><br><span class="tag red">Vulnerability Proof</span></td>
+        <td>
+          • Identified CWE (e.g. <code>CWE-89 SQL Injection</code>)<br>
+          • Affected Source Component (<code>authService.js:42</code>)<br>
+          • Subtabbed Evidence Viewer: HTTP Request, Response Body, Database Syntax Breaker Trace, and Subprocess Call Stack.
+        </td>
+        <td>
+          • <strong>Copy cURL:</strong> Copies ready-to-run HTTP command to replicate the probe.<br>
+          • <strong>Copy Evidence:</strong> Copies full trace logs for tickets.<br>
+          • <strong>Export SARIF:</strong> Formatted for security dashboards.
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Pane 2: Proposed Fix</strong><br><span class="tag green">AI Unified Diff</span></td>
+        <td>
+          • Remediation Strategy &amp; Technical Rationale<br>
+          • Syntax Compilation Check (<code>python -m py_compile • PASSED</code>)<br>
+          • Interactive Code Diff: Green additions (<code>+</code>) and red deletions (<code>-</code>) showing parameterized query replacement.
+        </td>
+        <td>
+          • <strong>Unified vs. Split Diff:</strong> Toggle between single-column and side-by-side views.<br>
+          • <strong>Approve &amp; Apply:</strong> Simulates safe merge into repository.<br>
+          • <strong>Reject Patch:</strong> Rejects candidate code change.
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Pane 3: Regression Audit</strong><br><span class="tag blue">Independent Verification</span></td>
+        <td>
+          • Dual-Check Matrix: Security Regression (Exploit blocked) and Functional Regression (Authentic users can authenticate).<br>
+          • Reproducibility Banner: Displays <code>REMEDIATED</code> status with 1/1 checks passed and runtime benchmark (<code>38ms</code>).
+        </td>
+        <td>
+          • <strong>Rerun Regression Test:</strong> Triggers independent auditor re-evaluation on demand.<br>
+          • <strong>Persistent Memory Record:</strong> Updates regression tracking fingerprint in database.
+        </td>
+      </tr>
+      <tr>
+        <td><strong>Pane 4: Raw Logs</strong><br><span class="tag dark">Execution Telemetry</span></td>
+        <td>
+          • Chronological system execution log with millisecond timestamps.<br>
+          • Multi-agent coordination state transitions (<code>[Scope Controller]</code>, <code>[Red Agent]</code>, <code>[Sentinel Agent]</code>, <code>[Fix Agent]</code>, <code>[Auditor Agent]</code>).
+        </td>
+        <td>
+          • Real-time inspection of HTTP status codes, headers, and isolation boundary checks.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- SECTION 6: API SPECIFICATION -->
+  <h2>6. Complete REST API Reference</h2>
+  <p>
+    The backend provides a RESTful API co-hosted with the frontend on port <code>3000</code>:
+  </p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 14%;">Method</th>
+        <th style="width: 26%;">Endpoint</th>
+        <th style="width: 32%;">Payload / Parameters</th>
+        <th style="width: 28%;">Response Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="tag green">GET</span></td>
+        <td><code>/api/health</code></td>
+        <td>None</td>
+        <td>System status, database type, and AI connectivity status.</td>
+      </tr>
+      <tr>
+        <td><span class="tag green">GET</span></td>
+        <td><code>/api/runs</code></td>
+        <td>None</td>
+        <td>List of all historical and active 5-stage workflow runs.</td>
+      </tr>
+      <tr>
+        <td><span class="tag blue">POST</span></td>
+        <td><code>/api/runs</code></td>
+        <td><code>{"target_id", "test_case", "scope_confirmed", "simulation_outcome"}</code></td>
+        <td>Initiates 5-stage workflow; returns <code>run_id</code> and initial state.</td>
+      </tr>
+      <tr>
+        <td><span class="tag green">GET</span></td>
+        <td><code>/api/runs/:id</code></td>
+        <td><code>:id</code> (Run identifier, e.g. <code>RUN-1050</code>)</td>
+        <td>Full run state, stage statuses, evidence traces, diff, and audit results.</td>
+      </tr>
+      <tr>
+        <td><span class="tag blue">POST</span></td>
+        <td><code>/api/runs/:id/approve-fix</code></td>
+        <td><code>{"operator_notes": "string"}</code></td>
+        <td>Records human sign-off; updates approval state in persistent database.</td>
+      </tr>
+      <tr>
+        <td><span class="tag green">GET</span></td>
+        <td><code>/api/runs/:id/report</code></td>
+        <td>Query param: <code>?format=json</code> or <code>?format=md</code></td>
+        <td>Generates sanitized Executive Audit Report in JSON or Markdown.</td>
+      </tr>
+      <tr>
+        <td><span class="tag blue">POST</span></td>
+        <td><code>/api/research/ingest</code></td>
+        <td><code>{"repo_url", "staging_url", "branch", "api_spec_content"}</code></td>
+        <td>Performs AST surface analysis, discovers endpoints, and returns risk tiers.</td>
+      </tr>
+      <tr>
+        <td><span class="tag blue">POST</span></td>
+        <td><code>/api/scans</code></td>
+        <td><code>{"target_id": "string"}</code></td>
+        <td>Triggers local AST Semgrep pattern scanner against target codebase.</td>
+      </tr>
+      <tr>
+        <td><span class="tag green">GET</span></td>
+        <td><code>/api/findings</code></td>
+        <td>None</td>
+        <td>Returns all normalized vulnerabilities with CVSS scores and fingerprints.</td>
+      </tr>
+      <tr>
+        <td><span class="tag blue">POST</span></td>
+        <td><code>/api/findings/:id/regression</code></td>
+        <td><code>:id</code> (Finding identifier, e.g. <code>FIND-CWE89-01</code>)</td>
+        <td>Auditor Agent re-executes independent regression test suite.</td>
+      </tr>
+      <tr>
+        <td><span class="tag green">GET</span></td>
+        <td><code>/api/security-memory</code></td>
+        <td>None</td>
+        <td>Persistent regression tracking table showing detection counts and status.</td>
+      </tr>
+      <tr>
+        <td><span class="tag blue">POST</span></td>
+        <td><code>/api/reset</code></td>
+        <td>None</td>
+        <td>Resets in-memory workflow runs, cache, and findings to clean initial state.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- PAGE BREAK -->
+  <div class="page-break"></div>
+
+  <!-- SECTION 7: STEP-BY-STEP OPERATOR MANUAL -->
+  <h2>7. Step-by-Step Operator Manual: How to Run &amp; Obtain Output</h2>
+
+  <div class="card highlight">
+    <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px;">Scenario A: Fastest Quick-Start (One-Click Autonomous Demo)</div>
+    <ol>
+      <li><strong>Open the Application:</strong> Launch your browser and navigate to <code>http://localhost:3000</code>.</li>
+      <li><strong>Click "Run Security Assessment":</strong> On the Landing Page hero, click the lime button: <code>Run Security Assessment</code>.</li>
+      <li><strong>Watch Real-Time Execution:</strong> The view switches automatically to the <strong>War Room (`#war-room`)</strong>. Watch the progress bar advance from 0% &rarr; 100% as the Scope Controller, Red Agent, Sentinel Agent, Fix Agent, and Auditor Agent coordinate synchronously.</li>
+      <li><strong>Inspect Outputs:</strong> Once complete, inspect the captured error trace under <strong>Finding Dossier</strong>, review the unified diff under <strong>Proposed Fix</strong>, and verify that regression checks passed under <strong>Regression Audit</strong>.</li>
+    </ol>
+  </div>
+
+  <div class="card blue">
+    <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px;">Scenario B: Ingestion &amp; Target Research (Custom URL / Portfolio Demo)</div>
+    <ol>
+      <li><strong>Navigate to Target Research:</strong> Click <strong>Target Research</strong> in the navbar (or visit <code>http://localhost:3000/#research</code>).</li>
+      <li><strong>Select a Preset or Custom URL:</strong>
+        <br>&bull; Click <strong>Session Gateway (JWT Auth)</strong> to test JWT algorithm "none" bypass.
+        <br>&bull; <em>OR</em> click <strong>+ Custom Target</strong> and enter your own staging link (e.g. <code>https://abhi-portfolio-wheat-s.vercel.app</code>). The system automatically maps your target to the safe container <code>SEC-LOCAL-8080</code>.
+      </li>
+      <li><strong>Ingest Target Surface:</strong> Click the green button: <strong>Ingest Target &amp; Discover Surface</strong>. The right column instantly extracts discovered endpoints, parameter risk levels (High, Medium, Critical), and technology stack.</li>
+      <li><strong>Launch Assessment:</strong> Click <strong>Launch Live War Room &rarr;</strong>. The system starts the assessment with the selected target and recommended CWE test case.</li>
+    </ol>
+  </div>
+
+  <div class="card purple">
+    <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px;">Scenario C: How to Export All Output Deliverables</div>
+    <ol>
+      <li><strong>cURL Reproduction Command:</strong> In the War Room under the <em>Finding Dossier</em> subtab, click <strong>Copy cURL</strong> to copy the exact HTTP exploit command to your clipboard.</li>
+      <li><strong>Unified Git Diff (.patch):</strong> Under the <em>Proposed Fix</em> subtab, review the additions/deletions, toggle to <em>Split View</em>, and click <strong>Approve &amp; Apply Patch</strong> to simulate applying the patch.</li>
+      <li><strong>SARIF JSON Security Vulnerability File:</strong> Navigate to <strong>Finding Detail (`#findingdetail`)</strong> and click <strong>Export SARIF JSON</strong> to download the standard SARIF vulnerability artifact for security scanners.</li>
+      <li><strong>Executive PDF Report:</strong> Open or download the generated comprehensive PDF documentation directly from the local server: <code>http://localhost:3000/AEGIS_AGENT_Complete_Project_Overview.pdf</code>.</li>
+    </ol>
+  </div>
+
+  <!-- SECTION 8: TECHNICAL ADVANTAGES -->
+  <h2>8. Key Differentiators &amp; Value Proposition</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 25%;">Evaluation Metric</th>
+        <th style="width: 35%;">Traditional Tools (SAST / DAST)</th>
+        <th style="width: 40%;">AEGIS-AGENT Autonomous SecOps</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Triage &amp; False Positives</strong></td>
+        <td>High alert volume; requires manual code auditing and verification for every ticket.</td>
+        <td><strong>Zero False-Positive Gate:</strong> Sentinel Agent requires empirical HTTP exploit reproduction before flagging.</td>
+      </tr>
+      <tr>
+        <td><strong>Remediation Cycle Time</strong></td>
+        <td>Industry average of 45+ days from vulnerability discovery to developer pull request.</td>
+        <td><strong>Under 60 Seconds:</strong> Closed-loop pipeline synthesizes and verifies a minimal unified diff in real-time.</td>
+      </tr>
+      <tr>
+        <td><strong>Patch Reliability</strong></td>
+        <td>LLM-generated code snippets often hallucinate non-existent libraries or break existing endpoints.</td>
+        <td><strong>Dual Regression Testing:</strong> Auditor Agent executes regression suites in isolated worktrees before human approval.</td>
+      </tr>
+      <tr>
+        <td><strong>Deployment Friction</strong></td>
+        <td>Heavy enterprise agents, expensive SaaS subscriptions, and complex CI/CD dependencies.</td>
+        <td><strong>Zero Dependencies:</strong> Single portable codebase, runs locally via native Node.js and persistent SQLite.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- FOOTER -->
+  <div style="margin-top: 18px; padding-top: 8px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 7.5pt; color: #64748b;">
+    <span>AEGIS-AGENT Autonomous Security Platform &bull; v2.4.0 Complete Specification</span>
+    <span>Local Demo Prototype &bull; Safe Sandbox Containment SEC-LOCAL-8080 &bull; Port 3000</span>
+  </div>
+
+</body>
+</html>
+

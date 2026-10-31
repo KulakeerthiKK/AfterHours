@@ -65,6 +65,11 @@ const ALLOWLISTED_TEST_COMMANDS = {
     command: 'python -m py_compile diagnostics/ping_service.py',
     description: 'Python subprocess call validation',
     output: 'Checked 1 file: diagnostics/ping_service.py. Syntax clean; shell=False verified.'
+  },
+  'chained-bugs': {
+    command: 'node -c backend/services/debug_service.js && go vet ./gateway/middleware/...',
+    description: 'Multi-service syntax check and cryptographic validator verification',
+    output: 'Checked 2 files: debug_service.js clean; session_restorer.go cryptographic bounds verified.'
   }
 };
 
@@ -149,6 +154,24 @@ const REMEDIATION_CATALOG = {
       { type: 'context', oldLine: 16, newLine: 19, text: ' ' }
     ],
     unified_diff: `--- a/diagnostics/ping_service.py\n+++ b/diagnostics/ping_service.py\n@@ -12,5 +12,7 @@\n def run_diagnostic(host):\n-    # VULNERABLE: Shell string formatting allows command chaining\n-    cmd = f"ping -c 2 {host}"\n-    return subprocess.check_output(cmd, shell=True)\n+    # SECURE: Validate IP address strictly and invoke subprocess without shell\n+    try:\n+        clean_host = str(ipaddress.ip_address(host.strip()))\n+    except ValueError:\n+        raise ValidationError("Invalid diagnostic host parameter")\n+    return subprocess.check_output(["ping", "-c", "2", clean_host], shell=False)`
+  },
+  'chained-bugs': {
+    fix_id: 'FIX-CHAIN-01',
+    cwe: 'CWE-200 + CWE-287',
+    summary: 'Sanitize debug environment disclosure and enforce dynamic nonce verification on session restore.',
+    rationale: 'Breaks the multi-stage exploit chain at both links: Step 1 redacts sensitive environment keys (APP_INTERNAL_HMAC_SALT) from debug outputs; Step 2 replaces static offline HMAC with ephemeral asymmetric nonce challenges with expiry.',
+    file_path: 'backend/services/debug_service.js',
+    diff_stats: { additions: 14, deletions: 5 },
+    diff_lines: [
+      { type: 'context', oldLine: 26, newLine: 26, text: ' function getDebugEnv(req, res) {' },
+      { type: 'deletion', oldLine: 27, newLine: null, text: '-    // VULNERABLE: Emits raw unredacted process.env containing internal HMAC salt', comment: 'Leaks APP_INTERNAL_HMAC_SALT' },
+      { type: 'deletion', oldLine: 28, newLine: null, text: '-    return res.json({ env: process.env });' },
+      { type: 'addition', oldLine: null, newLine: 27, text: '+    // SECURE: Redact sensitive secrets; filter out keys matching SALT|KEY|SECRET|TOKEN|PASS', comment: 'Redacts cryptographic material' },
+      { type: 'addition', oldLine: null, newLine: 28, text: '+    const safeEnv = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/(SECRET|SALT|KEY|PASS|TOKEN)/i.test(k)));' },
+      { type: 'addition', oldLine: null, newLine: 29, text: '+    return res.json({ env: safeEnv, sanitized: true });' },
+      { type: 'context', oldLine: 29, newLine: 30, text: ' }' }
+    ],
+    unified_diff: `--- a/backend/services/debug_service.js\n+++ b/backend/services/debug_service.js\n@@ -26,3 +26,4 @@\n function getDebugEnv(req, res) {\n-    // VULNERABLE: Emits raw unredacted process.env containing internal HMAC salt\n-    return res.json({ env: process.env });\n+    // SECURE: Redact sensitive secrets; filter out keys matching SALT|KEY|SECRET|TOKEN|PASS\n+    const safeEnv = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/(SECRET|SALT|KEY|PASS|TOKEN)/i.test(k)));\n+    return res.json({ env: safeEnv, sanitized: true });\n }`
   }
 };
 

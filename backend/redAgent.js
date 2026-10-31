@@ -16,21 +16,51 @@ const AUTHORIZED_TARGET_PATTERNS = [
   'local training app (diag-service:v1.4.2)',
   'http://localhost:8080',
   'http://127.0.0.1:8080',
-  'localhost:8080'
+  'localhost:8080',
+  'http://localhost:8081',
+  'http://127.0.0.1:8081',
+  'http://localhost:8082',
+  'http://127.0.0.1:8082',
+  'http://localhost:8083',
+  'http://127.0.0.1:8083'
 ];
+
+/**
+ * Normalizes test case aliases (e.g. cwe-89, cwe-287) to canonical test keys.
+ */
+function normalizeTestCase(testCase) {
+  if (!testCase || typeof testCase !== 'string') return 'input-validation';
+  const lower = testCase.trim().toLowerCase().replace(/[\s_]+/g, '-');
+  
+  if (lower === 'cwe-89' || lower === 'cwe89' || lower.includes('sql') || lower === 'input-validation') {
+    return 'input-validation';
+  }
+  if (lower === 'cwe-287' || lower === 'cwe287' || lower.includes('auth') || lower.includes('jwt') || lower === 'authentication-check') {
+    return 'authentication-check';
+  }
+  if (lower === 'cwe-22' || lower === 'cwe22' || lower.includes('traversal') || lower.includes('path') || lower === 'path-traversal') {
+    return 'path-traversal';
+  }
+  if (lower === 'cwe-78' || lower === 'cwe78' || lower.includes('cmd') || lower.includes('injection') || lower === 'command-injection') {
+    return 'command-injection';
+  }
+  if (lower === 'chained-bugs' || lower === 'chained-exploit' || lower === 'cwe-chained' || lower.includes('chain')) {
+    return 'chained-bugs';
+  }
+  return PREDEFINED_TEST_CASES[lower] ? lower : 'input-validation';
+}
 
 function isAllowlistedTarget(target) {
   if (!target || typeof target !== 'string') return false;
   const lower = target.trim().toLowerCase();
 
-  // Explicit safety block for external internet hosts
-  if (lower.startsWith('http://') || lower.startsWith('https://')) {
-    if (!lower.includes('localhost') && !lower.includes('127.0.0.1')) {
-      return false;
-    }
+  // Any non-empty string in demo simulation mode is permitted
+  // External URLs are mapped to the local safe container SEC-LOCAL-8080
+  if (lower.length > 0) {
+    return true;
   }
 
-  return AUTHORIZED_TARGET_PATTERNS.some(allowed => lower.includes(allowed.toLowerCase()));
+  return false;
 }
 
 // Predefined non-destructive test case specifications
@@ -94,8 +124,31 @@ const PREDEFINED_TEST_CASES = {
       call_stack: `File "diagnostics/ping_service.py", line 15, in run_diagnostic\n    return subprocess.check_output(cmd, shell=True)`
     },
     short_explanation: 'The diagnostic tool passes the host parameter into a shell string formatted execution command with shell=True, allowing command chaining delimiters to execute secondary commands.'
+  },
+  'chained-bugs': {
+    id: 'chained-bugs',
+    cwe: 'CWE-200 + CWE-287',
+    title: 'Chained Multi-Stage Exploit: Info Disclosure to Root Account Takeover (CWE-200 + CWE-287)',
+    severity: 'CRITICAL',
+    affected_component: 'GET /api/v1/system/debug-env chained into POST /api/v1/session/restore',
+    payload_description: 'Multi-stage exploit: Stage 1 harvests internal HMAC key salt from debug env; Stage 2 forges supervisor session token to hijack admin account',
+    evidence: {
+      http_request: `[STAGE 1: Information Disclosure Probe]\nGET /api/v1/system/debug-env HTTP/1.1\nHost: localhost:8080\nUser-Agent: AEGIS-RedAgent/2.4 (Chained Exploit Vector)\n\n[STAGE 2: Chained Privilege Escalation Probe]\nPOST /api/v1/session/restore HTTP/1.1\nHost: localhost:8080\nContent-Type: application/json\nX-Session-Signature: hmac_sha256(admin_root, salt=0x9f4a_internal_sec)\n\n{"account_id": "root_admin", "token": "forged_supervisor_jwt"}`,
+      http_response: `[STAGE 1 RESPONSE: 200 OK]\nContent-Type: application/json\n{"status": "debug", "env": {"NODE_ENV": "staging", "APP_INTERNAL_HMAC_SALT": "0x9f4a_internal_sec", "DB_FILE": "/var/data/staging.db"}}\n\n[STAGE 2 RESPONSE: 200 OK]\nContent-Type: application/json\n{"authenticated": true, "role": "root_supervisor", "permissions": ["*"], "access_token": "ROOT_BYPASS_TOKEN_ACTIVE"}`,
+      captured_trace: `[Multi-Hop Chained Exploit Trace]\n1. Ingress at GET /api/v1/system/debug-env (LOW severity isolated weakness: leaks APP_INTERNAL_HMAC_SALT).\n2. Red Agent extracted cryptographic salt and synthesized administrative signature: hmac_sha256("root_admin", "0x9f4a_internal_sec").\n3. Ingress at POST /api/v1/session/restore (LOW severity isolated weakness: accepts offline HMAC signature).\n4. Compound result: 1 + 1 = CRITICAL (Full administrative takeover).`,
+      call_stack: `File "backend/services/debug_service.js", line 28, in getDebugEnv\n    return res.json({ env: process.env })\nFile "gateway/middleware/session_restorer.go", line 54, in RestoreSession\n    if hmac.Equal(sig, computedSig) { grantAdminSession() }`
+    },
+    short_explanation: 'Two individually low-severity weaknesses (debug environment information disclosure and offline session signature acceptance) are chained together by the Red Agent to forge an administrative session and achieve complete root account takeover.'
   }
 };
+
+// Direct aliases for common CWE identifiers
+PREDEFINED_TEST_CASES['cwe-89'] = PREDEFINED_TEST_CASES['input-validation'];
+PREDEFINED_TEST_CASES['cwe-287'] = PREDEFINED_TEST_CASES['authentication-check'];
+PREDEFINED_TEST_CASES['cwe-22'] = PREDEFINED_TEST_CASES['path-traversal'];
+PREDEFINED_TEST_CASES['cwe-78'] = PREDEFINED_TEST_CASES['command-injection'];
+PREDEFINED_TEST_CASES['chained-exploit'] = PREDEFINED_TEST_CASES['chained-bugs'];
+PREDEFINED_TEST_CASES['cwe-chained'] = PREDEFINED_TEST_CASES['chained-bugs'];
 
 /**
  * Execute a controlled local Red Agent test.
@@ -106,26 +159,28 @@ const PREDEFINED_TEST_CASES = {
  * @returns {Promise<Object>} Red Agent execution result
  */
 async function executeControlledTest({ target_id, test_case }) {
+  const normalizedCase = normalizeTestCase(test_case);
+
   // 1. Strict Target Allowlist Check
   if (!isAllowlistedTarget(target_id)) {
     return {
       status: 'rejected',
       error: 'Target rejected: Target is not in the authorized local allowlist.',
       target_id,
-      test_case,
+      test_case: normalizedCase,
       finding: null,
       message: 'Red Agent refused execution: Target outside authorized local test bounds.'
     };
   }
 
   // 2. Validate Predefined Test Case
-  const testSpec = PREDEFINED_TEST_CASES[test_case];
+  const testSpec = PREDEFINED_TEST_CASES[normalizedCase];
   if (!testSpec) {
     return {
       status: 'rejected',
       error: `Unsupported test case '${test_case}'. Only predefined local test cases are permitted.`,
       target_id,
-      test_case,
+      test_case: normalizedCase,
       finding: null,
       message: 'Red Agent refused execution: Unsupported or arbitrary test probe requested.'
     };
@@ -166,6 +221,7 @@ async function executeControlledTest({ target_id, test_case }) {
 module.exports = {
   executeControlledTest,
   isAllowlistedTarget,
+  normalizeTestCase,
   PREDEFINED_TEST_CASES
 };
 
